@@ -6,269 +6,116 @@
 <title>KaizenBot - Asistente de Mejora Continua</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #EEEDFE;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 16px;
-  }
-
-  #app {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 720px;
-    height: 92vh;
-    max-height: 800px;
-    background: #fff;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 40px rgba(83,74,183,0.15);
-  }
-
-  /* HEADER */
-  #header {
-    padding: 16px 20px;
-    background: #534AB7;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0;
-  }
-  #header .avatar {
-    width: 42px; height: 42px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; flex-shrink: 0;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #EEEDFE; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
+  #app { display: flex; flex-direction: column; width: 100%; max-width: 720px; height: 92vh; max-height: 800px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 40px rgba(83,74,183,0.15); }
+  #header { padding: 16px 20px; background: #534AB7; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  #header .avatar { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
   #header .info .name { font-size: 16px; font-weight: 700; color: #fff; }
   #header .info .status { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; }
-  #phase-badge {
-    margin-left: auto;
-    font-size: 11px; font-weight: 600;
-    padding: 5px 14px;
-    background: rgba(255,255,255,0.2);
-    color: #fff;
-    border-radius: 20px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  /* MESSAGES */
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    background: #f7f8fc;
-  }
+  #phase-badge { margin-left: auto; font-size: 11px; font-weight: 600; padding: 5px 14px; background: rgba(255,255,255,0.2); color: #fff; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  #messages { flex: 1; overflow-y: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 14px; background: #f7f8fc; }
   #messages::-webkit-scrollbar { width: 4px; }
   #messages::-webkit-scrollbar-thumb { background: #d0cef5; border-radius: 4px; }
-
   .msg { display: flex; gap: 8px; max-width: 88%; }
   .msg.bot { align-self: flex-start; }
   .msg.user { align-self: flex-end; flex-direction: row-reverse; }
-
-  .msg .bubble {
-    padding: 12px 16px;
-    border-radius: 18px;
-    font-size: 14px;
-    line-height: 1.7;
-  }
-  .msg.bot .bubble {
-    background: #fff;
-    color: #1a1a2e;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-  .msg.user .bubble {
-    background: #534AB7;
-    color: #fff;
-    border-bottom-right-radius: 4px;
-  }
-
-  .msg .av {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; flex-shrink: 0; margin-top: 2px;
-  }
+  .msg .bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.7; }
+  .msg.bot .bubble { background: #fff; color: #1a1a2e; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .msg.user .bubble { background: #534AB7; color: #fff; border-bottom-right-radius: 4px; }
+  .msg .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; margin-top: 2px; }
   .msg.bot .av { background: #EEEDFE; }
   .msg.user .av { background: #e8f5e9; }
-
-  /* TYPING */
-  .typing-bubble {
-    display: flex; gap: 5px;
-    padding: 14px 16px;
-    align-items: center;
-    background: #fff;
-    border-radius: 18px;
-    border-bottom-left-radius: 4px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  }
-  .typing-bubble span {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: #c5c2f0;
-    animation: bounce 1.2s infinite;
-  }
+  .typing-bubble { display: flex; gap: 5px; padding: 14px 16px; align-items: center; background: #fff; border-radius: 18px; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .typing-bubble span { width: 8px; height: 8px; border-radius: 50%; background: #c5c2f0; animation: bounce 1.2s infinite; }
   .typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
   .typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes bounce {
-    0%,60%,100% { transform: translateY(0); }
-    30% { transform: translateY(-7px); }
-  }
-
-  /* ACTIONS BAR */
-  #actions-bar {
-    padding: 8px 16px;
-    background: #fff;
-    border-top: 1px solid #f0f0f0;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .action-btn {
-    font-size: 12px;
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1.5px solid #534AB7;
-    color: #534AB7;
-    background: #fff;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-    display: flex; align-items: center; gap: 5px;
-  }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+  #actions-bar { padding: 8px 16px; background: #fff; border-top: 1px solid #f0f0f0; display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+  .action-btn { font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #534AB7; color: #534AB7; background: #fff; cursor: pointer; font-weight: 500; transition: all 0.2s; }
   .action-btn:hover { background: #EEEDFE; }
   .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   .action-btn.primary { background: #534AB7; color: #fff; }
   .action-btn.primary:hover { background: #3C3489; }
-
-  /* INPUT */
-  #input-area {
-    padding: 14px 16px;
-    border-top: 1px solid #eee;
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-    background: #fff;
-    flex-shrink: 0;
-  }
-  #user-input {
-    flex: 1;
-    resize: none;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 14px;
-    padding: 10px 14px;
-    font-size: 14px;
-    font-family: inherit;
-    color: #1a1a2e;
-    background: #fff;
-    min-height: 44px;
-    max-height: 110px;
-    outline: none;
-    line-height: 1.5;
-    transition: border-color 0.2s;
-  }
+  #input-area { padding: 14px 16px; border-top: 1px solid #eee; display: flex; gap: 10px; align-items: flex-end; background: #fff; flex-shrink: 0; }
+  #user-input { flex: 1; resize: none; border: 1.5px solid #e0e0e0; border-radius: 14px; padding: 10px 14px; font-size: 14px; font-family: inherit; color: #1a1a2e; background: #fff; min-height: 44px; max-height: 110px; outline: none; line-height: 1.5; transition: border-color 0.2s; }
   #user-input:focus { border-color: #534AB7; }
-  #user-input::placeholder { color: #aaa; }
-
-  #send-btn {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    background: #534AB7;
-    border: none;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    transition: background 0.2s;
-  }
+  #send-btn { width: 44px; height: 44px; border-radius: 12px; background: #534AB7; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.2s; }
   #send-btn:hover { background: #3C3489; }
   #send-btn:disabled { background: #ccc; cursor: not-allowed; }
   #send-btn svg { width: 20px; height: 20px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-  /* BRANDING */
-  #branding {
-    text-align: center;
-    padding: 7px;
-    font-size: 11px;
-    color: #aaa;
-    background: #fff;
-    border-top: 1px solid #f5f5f5;
-    flex-shrink: 0;
-  }
+  #branding { text-align: center; padding: 7px; font-size: 11px; color: #aaa; background: #fff; border-top: 1px solid #f5f5f5; flex-shrink: 0; }
   #branding a { color: #534AB7; text-decoration: none; }
 
-  /* DOCUMENT PREVIEW */
-  #doc-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  #doc-modal.open { display: flex; }
-  #doc-box {
-    background: #fff;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 650px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  }
-  #doc-header {
-    padding: 16px 20px;
-    background: #534AB7;
-    border-radius: 16px 16px 0 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  #doc-header span { color: #fff; font-weight: 700; font-size: 15px; }
-  #doc-close {
-    background: rgba(255,255,255,0.2);
-    border: none; color: #fff;
-    width: 30px; height: 30px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  #doc-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px;
-    font-size: 13px;
-    line-height: 1.8;
-    color: #1a1a2e;
-    white-space: pre-wrap;
-    font-family: 'Courier New', monospace;
-  }
-  #doc-footer {
-    padding: 14px 20px;
-    border-top: 1px solid #eee;
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-  }
+  /* ACCESS SCREEN */
+  #access-screen { position: fixed; inset: 0; background: #EEEDFE; display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+  #access-box { background: #fff; border-radius: 20px; padding: 40px 32px; width: 100%; max-width: 400px; box-shadow: 0 8px 40px rgba(83,74,183,0.15); text-align: center; }
+  #access-box .logo { font-size: 40px; margin-bottom: 16px; }
+  #access-box h1 { font-size: 24px; font-weight: 700; color: #534AB7; margin-bottom: 8px; }
+  #access-box p { font-size: 14px; color: #666; margin-bottom: 24px; line-height: 1.6; }
+  #access-input { width: 100%; padding: 12px 16px; border: 1.5px solid #e0e0e0; border-radius: 12px; font-size: 16px; font-family: inherit; outline: none; text-align: center; letter-spacing: 2px; text-transform: uppercase; transition: border-color 0.2s; margin-bottom: 12px; }
+  #access-input:focus { border-color: #534AB7; }
+  #access-btn { width: 100%; padding: 12px; background: #534AB7; color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+  #access-btn:hover { background: #3C3489; }
+  #access-error { color: #E24B4A; font-size: 13px; margin-top: 8px; min-height: 20px; }
 
+  /* MODAL PROPUESTA */
+  #doc-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  #doc-modal.open { display: flex; }
+  #doc-box { background: #fff; border-radius: 16px; width: 100%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2); overflow: hidden; }
+  #doc-header { padding: 16px 20px; background: #534AB7; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  #doc-header span { color: #fff; font-weight: 700; font-size: 15px; }
+  #doc-close { background: rgba(255,255,255,0.2); border: none; color: #fff; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+  #doc-content { flex: 1; overflow-y: auto; padding: 0; }
+  #doc-footer { padding: 14px 20px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; flex-shrink: 0; }
+
+  /* PLANTILLA PROPUESTA */
+  .kz-wrap { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 100%; padding: 20px; }
+  .kz-header { background: #534AB7; border-radius: 12px; padding: 20px 24px; margin-bottom: 16px; }
+  .kz-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .kz-logo { font-size: 18px; font-weight: 700; color: #fff; }
+  .kz-logo span { font-size: 11px; display: block; color: rgba(255,255,255,0.65); font-weight: 400; margin-top: 2px; }
+  .kz-id-badge { font-size: 11px; background: rgba(255,255,255,0.2); color: #fff; padding: 4px 12px; border-radius: 20px; }
+  .kz-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  .kz-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kz-meta-item { background: rgba(255,255,255,0.12); border-radius: 8px; padding: 8px 12px; }
+  .kz-meta-label { font-size: 10px; color: rgba(255,255,255,0.6); margin-bottom: 2px; }
+  .kz-meta-value { font-size: 13px; color: #fff; font-weight: 500; }
+  .kz-section { border: 0.5px solid #e8e8e8; border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+  .kz-section-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f7f8fc; border-bottom: 0.5px solid #e8e8e8; }
+  .kz-section-icon { width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .kz-section-title { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .kz-section-body { padding: 12px 14px; }
+  .kz-text { font-size: 13px; color: #1a1a2e; line-height: 1.7; }
+  .kz-porques { list-style: none; padding: 0; margin: 0; }
+  .kz-porques li { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-bottom: 0.5px solid #f0f0f0; font-size: 13px; color: #1a1a2e; }
+  .kz-porques li:last-child { border-bottom: none; }
+  .kz-pq-num { width: 20px; height: 20px; border-radius: 50%; background: #EEEDFE; color: #534AB7; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .kz-causa { background: #EEEDFE; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #3C3489; font-weight: 500; margin-top: 10px; }
+  .kz-beneficios { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .kz-ben-item { background: #f7f8fc; border-radius: 8px; padding: 10px 12px; }
+  .kz-ben-label { font-size: 10px; color: #888; margin-bottom: 3px; }
+  .kz-ben-value { font-size: 13px; color: #1a1a2e; font-weight: 500; }
+  .kz-desperdicios { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .kz-desp-tag { font-size: 11px; background: #EEEDFE; color: #534AB7; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .kz-footer-doc { text-align: center; padding: 16px; border-top: 0.5px solid #eee; margin-top: 8px; font-size: 11px; color: #aaa; }
+  .kz-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .kz-chart-label { font-size: 11px; color: #888; text-align: center; margin-bottom: 6px; }
   hr.divider { border: none; border-top: 1px solid #eee; margin: 6px 0; }
 </style>
 </head>
 <body>
+
+<!-- PANTALLA DE ACCESO -->
+<div id="access-screen">
+  <div id="access-box">
+    <div class="logo">💡</div>
+    <h1>KaizenBot</h1>
+    <p>Asistente de mejora continua<br>ProKaizen Consulting · Orlando Querales</p>
+    <input type="text" id="access-input" placeholder="CÓDIGO DE ACCESO" maxlength="20" />
+    <button id="access-btn" onclick="checkAccess()">Ingresar</button>
+    <div id="access-error"></div>
+  </div>
+</div>
 
 <div id="app">
   <div id="header">
@@ -279,34 +126,22 @@
     </div>
     <div id="phase-badge">Iniciando...</div>
   </div>
-
   <div id="messages"></div>
-
   <div id="actions-bar">
-    <button class="action-btn" id="btn-save" disabled onclick="saveProposal()" title="Guardar borrador">
-      💾 Guardar borrador
-    </button>
-    <button class="action-btn" id="btn-download" disabled onclick="downloadProposal()" title="Descargar propuesta">
-      ⬇️ Descargar
-    </button>
-    <button class="action-btn" id="btn-new" onclick="newProposal()" title="Nueva propuesta">
-      ✚ Nueva propuesta
-    </button>
+    <button class="action-btn" id="btn-save" disabled onclick="saveProposal()">💾 Guardar borrador</button>
+    <button class="action-btn" id="btn-download" disabled onclick="downloadProposal()">⬇️ Descargar</button>
+    <button class="action-btn" onclick="newProposal()">✚ Nueva propuesta</button>
   </div>
-
   <div id="input-area">
     <textarea id="user-input" placeholder="Escribe tu mensaje aquí..." rows="1"></textarea>
     <button id="send-btn" disabled>
       <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
-
-  <div id="branding">
-    Desarrollado por <a href="#" target="_blank">ProKaizen Consulting</a> · Metodología Kaizen Teian · Orlando Querales
-  </div>
+  <div id="branding">Desarrollado por <a href="#" target="_blank">ProKaizen Consulting</a> · Metodología Kaizen Teian · Orlando Querales</div>
 </div>
 
-<!-- MODAL DOCUMENTO -->
+<!-- MODAL PROPUESTA -->
 <div id="doc-modal">
   <div id="doc-box">
     <div id="doc-header">
@@ -316,149 +151,34 @@
     <div id="doc-content"></div>
     <div id="doc-footer">
       <button class="action-btn" onclick="closeDocModal()">Cerrar</button>
-      <button class="action-btn primary" onclick="downloadTxt()">⬇️ Descargar .txt</button>
+      <button class="action-btn primary" onclick="printProposal()">🖨️ Guardar como PDF</button>
     </div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
+
 // ============================================================
-// CONFIGURACIÓN — PEGA TU API KEY DE ANTHROPIC AQUÍ ABAJO
+// CÓDIGOS DE ACCESO — agregar o eliminar según necesites
 // ============================================================
-const API_KEY = "";
+const ACCESS_CODES = [
+  "KAIZEN01",
+  "KAIZEN02",
+  "KAIZEN03",
+  "KAIZEN04",
+  "KAIZEN05",
+  "PROKAIZEN",
+  "ORLANDO2025"
+];
 // ============================================================
 
-const API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-6";
-
-const SYSTEM_PROMPT = `Eres KaizenBot, el asistente digital de mejora continua de ProKaizen Consulting, desarrollado por Orlando Querales, experto en Lean Manufacturing y Kaizen Teian. Tu misión es guiar a colaboradores de empresas para que formulen propuestas de mejora siguiendo estrictamente la metodología Kaizen Teian basada en el ciclo PDCA.
-
-=== PERSONALIDAD Y TONO ===
-- Amigable, respetuoso y profesional en todo momento
-- Si recibes mensajes fuera de contexto, bromas o comentarios no pertinentes, responde amablemente: "Disculpa, no comprendo bien lo que me planteas. ¿Podrías contarme sobre el problema o situación que deseas mejorar en tu trabajo?"
-- NUNCA emitas juicios de valor, califiques situaciones, uses adjetivos innecesarios ni induzcas respuestas
-- NUNCA repitas palabras mal escritas del usuario
-- NUNCA uses palabras ofensivas ni condescendientes
-- Haz SIEMPRE UNA SOLA pregunta a la vez, nunca varias juntas
-- Pregunta primero, explica solo si es necesario o si comete un error metodológico
-- Máximo 3 oraciones por respuesta en fases de recolección de datos
-- Responde SIEMPRE en español
-
-=== HERRAMIENTAS PERMITIDAS ===
-SOLO puedes mencionar y aplicar estas técnicas: 5 Porqués, Por lo Tanto, ciclo PDCA.
-NUNCA menciones: Ishikawa, diagrama de espina de pescado, A3, VSM, VACA, Six Sigma, ni ninguna otra herramienta fuera de las tres mencionadas.
-
-=== PALABRAS BASURA - DETECTAR Y CORREGIR ===
-Si el usuario usa palabras vagas como: mucho, varios, a veces, bastante, lotes, montones, innumerables, demasiados, escasos, pocos, significativo, grande, pequeño (sin datos), frecuentemente, raramente, casi siempre, casi nunca...
-Responde: "Para describir bien el problema necesitamos datos medibles. ¿Podrías indicarme un número o porcentaje concreto?"
-
-=== FLUJO COMPLETO DEL PROCESO ===
-El proceso tiene 5 fases. Sigue este orden estrictamente.
-
---- FASE 1: DATOS ADMINISTRATIVOS ---
-Solicita en orden, uno a la vez:
-1. Nombre completo del colaborador
-2. Área o departamento
-3. Proceso afectado
-4. Fecha (usa la actual si no la indica)
-Luego avanza a Fase 2.
-
---- FASE 2: DEFINICIÓN DEL PROBLEMA ---
-Objetivo: construir un párrafo que responda estos 5 elementos obligatorios:
-1. QUÉ ocurre (síntoma, NO causa ni solución)
-2. CUÁNDO ocurre o con qué frecuencia
-3. DÓNDE ocurre (proceso, área o referencia)
-4. BRECHA: valor actual vs estándar o situación ideal (con datos numéricos)
-5. IMPACTO: qué objetivo, indicador, meta, SLA o resultado se ve afectado
-
-REGLAS CRÍTICAS FASE 2:
-- Si menciona una SOLUCIÓN: guardarla internamente y redirigir amablemente al síntoma
-- Si no hay estándar formal: aceptar situación ideal como referencia provisional
-- Si usa palabras basura: pedir dato numérico concreto
-- El problema es la brecha entre el estándar y el valor actual
-- Si describe varios problemas: separar en Kaizenes individuales
-- Al completar los 5 elementos: generar párrafo en tercera persona y pedir validación
-
-Formato del párrafo: Cuándo/frecuencia + qué ocurre + dónde + brecha con datos + impacto en indicador/objetivo. Sin palabras basura, sin causas, sin soluciones, en tercera persona.
-
---- FASE 3: ESTADO ACTUAL Y ESTADO FUTURO ---
-Solicita al colaborador:
-1. "Describe brevemente cómo ocurre el problema actualmente. Incluye el valor actual del indicador afectado y la brecha con respecto al estándar."
-2. "Describe cómo sería la situación una vez resuelta. ¿Qué porcentaje del problema estimas que resolverá tu propuesta?"
-
---- FASE 4: ANÁLISIS DE CAUSA RAÍZ - 5 PORQUÉS ---
-Aplica la técnica directamente sin anunciarla. Pregunta: "¿Por qué ocurre [síntoma]?"
-Por cada respuesta: "¿Y por qué [respuesta anterior]?"
-
-REGLAS CRÍTICAS FASE 4:
-- Cada porqué se basa SIEMPRE en la respuesta anterior, nunca en paralelo
-- Si da múltiples causas: pedir que elija una
-- Si responde con sinónimos: pedir profundizar más
-- Si responde con una solución: indicar que es una solución, no una causa
-- La causa raíz se alcanza cuando no se puede continuar con coherencia
-
-Tras los porqués, aplica los POR LO TANTO en sentido inverso para validar la coherencia.
-Si hay inconsistencia: revisar el paso donde se detectó.
-
---- FASE 5: CONTRAMEDIDA ---
-Pregunta: "¿Qué acción propones para resolver la causa raíz?"
-NUNCA sugieras opciones primero.
-Valida que apunte a la causa raíz, no al síntoma.
-Pregunta si la acción está dentro de sus posibilidades.
-Pregunta quién sería el responsable.
-
---- DOCUMENTO FINAL ---
-Cuando todas las fases estén completas, genera el documento con este formato EXACTO (es importante para la descarga):
-
-DOCUMENTO_INICIO
-📋 PROPUESTA DE MEJORA - KAIZEN TEIAN
-ProKaizen Consulting · Orlando Querales
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👤 DATOS ADMINISTRATIVOS
-Colaborador: [nombre]
-Área: [área]
-Proceso: [proceso]
-Fecha: [fecha]
-
-🔴 PROBLEMA
-[párrafo validado]
-
-📊 ESTADO ACTUAL
-[descripción estado actual con datos]
-
-🟢 ESTADO FUTURO
-[descripción estado futuro con estimación]
-
-🔍 ANÁLISIS DE CAUSA RAÍZ
-Por qué 1: [respuesta 1]
-Por qué 2: [respuesta 2]
-Por qué 3: [respuesta 3]
-Por qué 4: [respuesta 4]
-Por qué 5: [respuesta 5]
-
-✅ CAUSA RAÍZ IDENTIFICADA
-[último porqué]
-
-💡 CONTRAMEDIDA PROPUESTA
-[contramedida]
-Responsable: [responsable]
-
-🎯 BENEFICIOS ESPERADOS
-Impacto en indicador: [indicador]
-Estimación de mejora: [porcentaje estimado]
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Generado con KaizenBot · ProKaizen Consulting
-DOCUMENTO_FIN
-
-Luego pregunta: "¿Deseas ajustar algo antes de descargar esta propuesta?"`;
-
+// ESTADO GLOBAL
 let history = [];
 let waiting = false;
-let proposalDoc = "";
+let proposalData = {};
 let proposalReady = false;
-let savedDraft = null;
+let currentProposalId = null;
 
 const messagesDiv = document.getElementById('messages');
 const userInput = document.getElementById('user-input');
@@ -467,6 +187,153 @@ const phaseBadge = document.getElementById('phase-badge');
 const btnSave = document.getElementById('btn-save');
 const btnDownload = document.getElementById('btn-download');
 
+// CONTROL DE ACCESO
+function checkAccess() {
+  const code = document.getElementById('access-input').value.trim().toUpperCase();
+  const errorDiv = document.getElementById('access-error');
+  if (ACCESS_CODES.includes(code)) {
+    document.getElementById('access-screen').style.display = 'none';
+    init();
+  } else {
+    errorDiv.textContent = 'Código incorrecto. Por favor verifica e intenta de nuevo.';
+    document.getElementById('access-input').value = '';
+    document.getElementById('access-input').focus();
+  }
+}
+
+document.getElementById('access-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkAccess();
+});
+
+// GENERADOR DE ID DE PROPUESTA
+function generateProposalId() {
+  const year = new Date().getFullYear();
+  const seq = String(Math.floor(Math.random() * 9000) + 1000);
+  return `KT-${year}-${seq}`;
+}
+
+// FECHA ACTUAL AUTOMÁTICA
+function getCurrentDate() {
+  return new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+const SYSTEM_PROMPT = `Eres KaizenBot, el asistente digital de mejora continua de ProKaizen Consulting, desarrollado por Orlando Querales, experto en Lean Manufacturing y Kaizen Teian. Tu misión es guiar a colaboradores de empresas para que formulen propuestas de mejora siguiendo estrictamente la metodología Kaizen Teian basada en el ciclo PDCA.
+
+=== PERSONALIDAD Y TONO ===
+- Amigable, respetuoso y profesional en todo momento
+- Si recibes mensajes fuera de contexto responde: "Disculpa, no comprendo bien lo que me planteas. ¿Podrías contarme sobre el problema que deseas mejorar?"
+- NUNCA emitas juicios de valor ni uses lenguaje condescendiente
+- NUNCA repitas palabras mal escritas del usuario
+- Haz SIEMPRE UNA SOLA pregunta a la vez
+- Máximo 3 oraciones por respuesta en fases de recolección
+- Responde SIEMPRE en español
+
+=== HERRAMIENTAS PERMITIDAS ===
+SOLO: 5 Porqués, Por lo Tanto, ciclo PDCA.
+NUNCA menciones: Ishikawa, A3, VSM, VACA, Six Sigma ni ninguna otra herramienta.
+
+=== PALABRAS Y DATOS ===
+PALABRAS BASURA SIN NÚMERO (mucho, varios, a veces, bastante, frecuentemente): pedir dato numérico concreto.
+APROXIMACIONES CON NÚMERO (entre 20 y 24, aprox 20 minutos): promediar y proponer.
+Ejemplo: "¿Te parece si trabajamos con 22 casos como promedio?"
+
+=== MENÚ DE INICIO ===
+Al iniciar SIEMPRE presentar este menú antes de cualquier otra cosa:
+"¡Bienvenido a KaizenBot! ¿Qué deseas hacer hoy?
+1️⃣ Iniciar una nueva propuesta
+2️⃣ Retomar una propuesta en borrador
+3️⃣ Consultar el estado de una propuesta"
+
+Si elige 2: Preguntar si tiene número KT-AÑO-XXXX. Si no tiene: buscar por nombre, mostrar máximo 5 resultados solo con estado Borrador o En Proceso. Máximo 2 intentos. Si no se encuentra: indicar que puede tener otro estado y ofrecer opción 3.
+Si elige 3: Pedir nombre o número de propuesta y mostrar estado.
+
+=== FLUJO — 5 FASES ===
+
+FASE 1 — DATOS ADMINISTRATIVOS:
+Solicitar UNO A LA VEZ: nombre completo, área o departamento, proceso afectado.
+La fecha actual ya está registrada automáticamente — NUNCA preguntarla al colaborador.
+Al completar: confirmar datos y avanzar a Fase 2.
+
+FASE 2 — DEFINICIÓN DEL PROBLEMA:
+5 elementos obligatorios: qué ocurre (síntoma), cuándo/frecuencia, dónde, brecha (valor actual vs estándar con datos numéricos), impacto en indicador.
+
+REGLAS CRÍTICAS:
+- Si menciona SOLUCIÓN: "Gracias, eso es muy valioso y lo usaremos en la Fase 5. Por ahora centrémonos en describir qué está ocurriendo."
+- PALABRAS BASURA SIN NÚMERO: pedir dato concreto.
+- APROXIMACIONES CON NÚMERO: promediar y proponer.
+- El párrafo NUNCA nombra al colaborador como parte del problema. Tercera persona impersonal.
+- Calcular y mencionar la brecha EXPLÍCITAMENTE: valor actual, estándar, diferencia numérica.
+- Si el impacto es vago: preguntar valor actual del indicador vs meta.
+
+Al completar los 5 elementos generar párrafo así:
+[Cuándo/frecuencia + qué ocurre + dónde + brecha con datos explícitos (valor actual, estándar, diferencia) + impacto en indicador con valor]
+En tercera persona impersonal, sin palabras basura, sin causas, sin soluciones.
+
+FASE 3 — ESTADO ACTUAL Y FUTURO:
+1. "Describe brevemente cómo ocurre el problema actualmente. Incluye el valor actual del indicador y la brecha con el estándar."
+2. "Describe cómo sería la situación una vez resuelta. ¿Qué porcentaje del problema estimas que resolverá tu propuesta?"
+
+FASE 4 — 5 PORQUÉS:
+Preguntar: "¿Por qué ocurre [síntoma]?" y encadenar.
+
+PORQUÉS EN PARALELO — cuando el colaborador da varias causas simultáneas al mismo nivel:
+NO es un error. Responder: "¡Excelente, [nombre]! Identificaste [N] situaciones importantes que merecen atención. Eso es muy valioso para la mejora continua del área. En la metodología Kaizen Teian cada causa se trabaja por separado para asegurar que la solución sea precisa y efectiva. Continuemos con la primera: [causa elegida por el colaborador]. Las otras las registraré para que puedas desarrollarlas como propuestas independientes."
+Registrar internamente las causas paralelas para preconstruir propuestas al final.
+
+DISTRIBUCIÓN PORCENTUAL:
+Si hay causas paralelas, preguntar: "¿Qué porcentaje de [la brecha/el problema] estimas que resolvería esta contramedida? Aquí no hay respuesta incorrecta, [nombre] — es solo tu mejor estimación, salvo que tengas los datos precisos para comprobarlo. De cualquier manera, tú junto a tu supervisor podrán ajustarla durante la revisión."
+
+OTRAS REGLAS FASE 4:
+- Si responde con sinónimos: pedir profundizar más.
+- Si responde con solución: indicar que es solución, no causa.
+- La cantidad de porqués no es fija en 5.
+- Validar con Por lo Tanto en sentido inverso al final.
+
+FASE 5 — CONTRAMEDIDA:
+Preguntar: "¿Qué acción propones para resolver la causa raíz?" — NUNCA sugerir opciones primero.
+Validar que apunte a la causa raíz. Preguntar responsable.
+
+PASO FINAL — DESPERDICIOS LEAN:
+Antes de generar el documento presentar:
+"Antes de finalizar, ¿cuál o cuáles de estos desperdicios Lean eliminaría o reduciría tu propuesta?
+1. Sobreproducción — producir más de lo necesario
+2. Espera — tiempo inactivo esperando información o decisión
+3. Transporte innecesario — movimiento sin valor agregado
+4. Sobreprocesamiento — pasos que no agregan valor
+5. Inventario excesivo — acumulación de tareas o materiales
+6. Movimiento innecesario — desplazamientos sin valor
+7. Defectos — errores y reprocesos
+8. Talento no aprovechado — habilidades no utilizadas
+Puedes indicar uno o varios números."
+Confirmar sin juzgar: "Registramos: [selección]. Tu supervisor podrá complementar esto durante la revisión."
+
+PRECONSTRUCCIÓN AL CERRAR:
+Si hubo causas paralelas, antes de generar el documento preguntar:
+"[Nombre], durante nuestra conversación identificaste [N] situaciones adicionales: [lista]. ¿Deseas iniciar ahora una de estas propuestas o prefieres guardarlas para después?"
+
+DOCUMENTO FINAL — usar EXACTAMENTE este formato:
+
+DOCUMENTO_INICIO
+COLABORADOR:[nombre]
+AREA:[área]
+PROCESO:[proceso]
+FECHA:[fecha]
+ID:[ID de propuesta]
+PROBLEMA:[párrafo del problema]
+ESTADO_ACTUAL:[descripción]
+ESTADO_FUTURO:[descripción con estimación %]
+PORQUES:[porqué 1|porqué 2|porqué 3|porqué 4|porqué 5]
+CAUSA_RAIZ:[causa raíz]
+CONTRAMEDIDA:[contramedida]
+RESPONSABLE:[responsable]
+INDICADOR:[indicador afectado]
+MEJORA_ESTIMADA:[porcentaje]
+DESPERDICIOS:[desperdicio1|desperdicio2]
+DOCUMENTO_FIN
+
+Luego preguntar: "¿Deseas ajustar algo antes de descargar tu propuesta?"`;
+
+// MENSAJES
 function addMessage(role, content) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
@@ -476,19 +343,15 @@ function addMessage(role, content) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
 
-  // Extraer documento si existe
   if (content.includes('DOCUMENTO_INICIO') && content.includes('DOCUMENTO_FIN')) {
-    const start = content.indexOf('DOCUMENTO_INICIO') + 'DOCUMENTO_INICIO'.length;
-    const end = content.indexOf('DOCUMENTO_FIN');
-    proposalDoc = content.substring(start, end).trim();
+    parseProposalData(content);
     proposalReady = true;
     btnDownload.disabled = false;
     btnSave.disabled = false;
-
-    // Mostrar versión limpia en el chat
-    const before = content.substring(0, content.indexOf('DOCUMENTO_INICIO'));
-    const after = content.substring(content.indexOf('DOCUMENTO_FIN') + 'DOCUMENTO_FIN'.length);
-    content = before + '\n\n✅ **Tu propuesta Kaizen Teian está lista.** Puedes descargarla con el botón ⬇️ Descargar.\n\n' + after;
+    phaseBadge.textContent = '✅ Propuesta Lista';
+    content = content.substring(0, content.indexOf('DOCUMENTO_INICIO')) +
+      '\n\n✅ **¡Tu propuesta Kaizen Teian está completa!** Usa el botón ⬇️ Descargar para verla y guardarla como PDF.\n\n' +
+      content.substring(content.indexOf('DOCUMENTO_FIN') + 'DOCUMENTO_FIN'.length);
   }
 
   bubble.innerHTML = content
@@ -500,6 +363,23 @@ function addMessage(role, content) {
   div.appendChild(bubble);
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+function parseProposalData(content) {
+  const start = content.indexOf('DOCUMENTO_INICIO') + 'DOCUMENTO_INICIO'.length;
+  const end = content.indexOf('DOCUMENTO_FIN');
+  const raw = content.substring(start, end).trim();
+  const lines = raw.split('\n');
+  proposalData = {};
+  lines.forEach(line => {
+    const idx = line.indexOf(':');
+    if (idx > -1) {
+      const key = line.substring(0, idx).trim();
+      const val = line.substring(idx + 1).trim();
+      proposalData[key] = val;
+    }
+  });
+  if (!proposalData.ID) proposalData.ID = currentProposalId || generateProposalId();
 }
 
 function showTyping() {
@@ -524,42 +404,31 @@ function hideTyping() {
 }
 
 function updateBadge(reply) {
+  if (proposalReady) return;
   const r = reply.toLowerCase();
-  if (r.includes('nombre') && history.length < 4) phaseBadge.textContent = 'Fase 1: Datos';
+  if (r.includes('nueva propuesta') || r.includes('retomar') || r.includes('consultar')) phaseBadge.textContent = 'Menú inicio';
+  else if (r.includes('nombre') && history.length < 6) phaseBadge.textContent = 'Fase 1: Datos';
   else if (r.includes('área') || r.includes('proceso afectado')) phaseBadge.textContent = 'Fase 1: Datos';
-  else if (r.includes('problema') || r.includes('qué ocurre') || r.includes('estándar') || r.includes('brecha')) phaseBadge.textContent = 'Fase 2: Problema';
-  else if (r.includes('estado actual') || r.includes('estado futuro') || r.includes('ocurre actualmente')) phaseBadge.textContent = 'Fase 3: Estados';
-  else if (r.includes('por qué') || r.includes('porqué') || r.includes('por lo tanto')) phaseBadge.textContent = 'Fase 4: Causa Raíz';
-  else if (r.includes('contramedida') || r.includes('acción propones') || r.includes('causa raíz identificada')) phaseBadge.textContent = 'Fase 5: Contramedida';
-  else if (proposalReady) phaseBadge.textContent = '✅ Propuesta Lista';
+  else if (r.includes('problema') || r.includes('estándar') || r.includes('brecha')) phaseBadge.textContent = 'Fase 2: Problema';
+  else if (r.includes('estado actual') || r.includes('ocurre actualmente')) phaseBadge.textContent = 'Fase 3: Estados';
+  else if (r.includes('por qué') || r.includes('por lo tanto')) phaseBadge.textContent = 'Fase 4: Causa Raíz';
+  else if (r.includes('contramedida') || r.includes('acción propones')) phaseBadge.textContent = 'Fase 5: Contramedida';
+  else if (r.includes('desperdicio')) phaseBadge.textContent = 'Desperdicios Lean';
 }
 
 async function callAPI(text) {
   history.push({ role: 'user', content: text });
-
-  const response = await fetch(API_URL, {
+  const response = await fetch('/api/chat', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-request-bypass': 'true'
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1000,
-      system: SYSTEM_PROMPT,
-      messages: history
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: history, system: SYSTEM_PROMPT })
   });
-
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'Error de conexión con la API');
+    throw new Error(err.error || 'Error de conexión');
   }
-
   const data = await response.json();
-  const reply = data.content[0].text;
+  const reply = data.content;
   history.push({ role: 'assistant', content: reply });
   return reply;
 }
@@ -570,112 +439,246 @@ async function send(text) {
   sendBtn.disabled = true;
   addMessage('user', text);
   showTyping();
-
   try {
     const reply = await callAPI(text);
     hideTyping();
     addMessage('bot', reply);
     updateBadge(reply);
-    btnSave.disabled = history.length < 2;
+    if (history.length >= 4) btnSave.disabled = false;
   } catch (err) {
     hideTyping();
     addMessage('bot', `⚠️ ${err.message || 'Ocurrió un error. Por favor intenta de nuevo.'}`);
   }
-
   waiting = false;
   sendBtn.disabled = false;
   userInput.focus();
 }
 
-function saveProposal() {
-  savedDraft = {
+// GUARDAR BORRADOR — local + Supabase
+async function saveProposal() {
+  const timestamp = new Date().toLocaleString('es-CL');
+  const draft = {
     history: [...history],
-    proposalDoc,
+    proposalData: {...proposalData},
     proposalReady,
-    timestamp: new Date().toLocaleString('es-CL')
+    currentProposalId,
+    timestamp
   };
-  localStorage.setItem('kaizenbot_draft', JSON.stringify(savedDraft));
-  addMessage('bot', `✅ Borrador guardado el ${savedDraft.timestamp}. Puedes cerrar esta ventana y retomar más tarde.`);
+  localStorage.setItem('kaizenbot_draft', JSON.stringify(draft));
+
+  // Extraer nombre del colaborador del historial si no está en proposalData
+  let nombreColab = proposalData.COLABORADOR || '';
+  if (!nombreColab && history.length > 0) {
+    for (const msg of history) {
+      if (msg.role === 'user' && msg.content && msg.content.trim().length > 2 && msg.content.trim().length < 60) {
+        nombreColab = msg.content.trim();
+        break;
+      }
+    }
+  }
+
+  // Guardar en Supabase siempre que haya al menos un mensaje
+  if (history.length > 2) {
+    try {
+      const propId = currentProposalId || proposalData.ID || generateProposalId();
+      if (!currentProposalId) currentProposalId = propId;
+
+      const record = {
+        id_propuesta: propId,
+        colaborador: nombreColab || 'Sin nombre',
+        area: proposalData.AREA || '',
+        proceso: proposalData.PROCESO || '',
+        fecha: proposalData.FECHA || getCurrentDate(),
+        estado: proposalReady ? 'Enviada' : 'Borrador',
+        indicador: proposalData.INDICADOR || '',
+        desperdicios: proposalData.DESPERDICIOS || '',
+        mejora_estimada: proposalData.MEJORA_ESTIMADA || '',
+        propuestas_relacionadas: '',
+        conversacion: JSON.stringify(history)
+      };
+
+      const response = await fetch('/api/save-proposal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal: record })
+      });
+
+      if (response.ok) {
+        addMessage('bot', `✅ Borrador guardado en el repositorio el ${timestamp} con el número ${propId}. Anótalo para retomarlo desde el menú de inicio.`);
+      } else {
+        addMessage('bot', `✅ Borrador guardado localmente el ${timestamp}. No se pudo conectar al repositorio en este momento.`);
+      }
+    } catch(e) {
+      addMessage('bot', `✅ Borrador guardado localmente el ${timestamp}.`);
+    }
+  } else {
+    addMessage('bot', `✅ Borrador guardado el ${timestamp}. Puedes cerrar esta ventana y retomarlo más tarde desde el menú de inicio.`);
+  }
 }
 
+// DESCARGAR PROPUESTA
 function downloadProposal() {
-  if (!proposalDoc) {
+  if (!proposalReady || !proposalData.COLABORADOR) {
     addMessage('bot', 'La propuesta aún no está completa. Continuemos hasta terminar todas las fases.');
     return;
   }
-  document.getElementById('doc-content').textContent = proposalDoc;
+  renderProposalModal();
   document.getElementById('doc-modal').classList.add('open');
 }
 
-function closeDocModal() {
-  document.getElementById('doc-modal').classList.remove('open');
+function renderProposalModal() {
+  const d = proposalData;
+  const porques = (d.PORQUES || '').split('|').filter(p => p.trim());
+  const desperdicios = (d.DESPERDICIOS || '').split('|').filter(d => d.trim());
+
+  const html = `
+  <div class="kz-wrap">
+    <div class="kz-header">
+      <div class="kz-header-top">
+        <div class="kz-logo">💡 KaizenBot <span>ProKaizen Consulting · Orlando Querales</span></div>
+        <div class="kz-id-badge">${d.ID || ''}</div>
+      </div>
+      <div class="kz-title">Propuesta de Mejora — Kaizen Teian</div>
+      <div class="kz-meta">
+        <div class="kz-meta-item"><div class="kz-meta-label">Colaborador</div><div class="kz-meta-value">${d.COLABORADOR || ''}</div></div>
+        <div class="kz-meta-item"><div class="kz-meta-label">Área</div><div class="kz-meta-value">${d.AREA || ''}</div></div>
+        <div class="kz-meta-item"><div class="kz-meta-label">Proceso</div><div class="kz-meta-value">${d.PROCESO || ''}</div></div>
+        <div class="kz-meta-item"><div class="kz-meta-label">Fecha</div><div class="kz-meta-value">${d.FECHA || getCurrentDate()}</div></div>
+      </div>
+    </div>
+
+    <div class="kz-section">
+      <div class="kz-section-header"><div class="kz-section-icon" style="background:#FCEBEB;">🔴</div><div class="kz-section-title">Problema identificado</div></div>
+      <div class="kz-section-body"><div class="kz-text">${d.PROBLEMA || ''}</div></div>
+    </div>
+
+    <div class="kz-section">
+      <div class="kz-section-header"><div class="kz-section-icon" style="background:#E6F1FB;">📊</div><div class="kz-section-title">Estado actual y estado futuro</div></div>
+      <div class="kz-section-body">
+        <div style="margin-bottom:10px;"><div style="font-size:11px;color:#888;margin-bottom:4px;">Estado actual</div><div class="kz-text">${d.ESTADO_ACTUAL || ''}</div></div>
+        <div><div style="font-size:11px;color:#888;margin-bottom:4px;">Estado futuro</div><div class="kz-text">${d.ESTADO_FUTURO || ''}</div></div>
+      </div>
+    </div>
+
+    <div class="kz-section">
+      <div class="kz-section-header"><div class="kz-section-icon" style="background:#EEEDFE;">🔍</div><div class="kz-section-title">Análisis de causa raíz</div></div>
+      <div class="kz-section-body">
+        <ul class="kz-porques">
+          ${porques.map((p, i) => `<li><div class="kz-pq-num">${i+1}</div><div>${p.trim()}</div></li>`).join('')}
+        </ul>
+        <div style="margin-top:10px;"><div style="font-size:11px;color:#888;margin-bottom:6px;">Causa raíz identificada</div>
+        <div class="kz-causa">${d.CAUSA_RAIZ || ''}</div></div>
+      </div>
+    </div>
+
+    <div class="kz-section">
+      <div class="kz-section-header"><div class="kz-section-icon" style="background:#EAF3DE;">💡</div><div class="kz-section-title">Contramedida propuesta</div></div>
+      <div class="kz-section-body">
+        <div class="kz-text" style="margin-bottom:12px;">${d.CONTRAMEDIDA || ''}</div>
+        <div class="kz-beneficios">
+          <div class="kz-ben-item"><div class="kz-ben-label">Responsable</div><div class="kz-ben-value">${d.RESPONSABLE || ''}</div></div>
+          <div class="kz-ben-item"><div class="kz-ben-label">Indicador afectado</div><div class="kz-ben-value">${d.INDICADOR || ''}</div></div>
+          <div class="kz-ben-item"><div class="kz-ben-label">Mejora estimada</div><div class="kz-ben-value">${d.MEJORA_ESTIMADA || ''}</div></div>
+          <div class="kz-ben-item"><div class="kz-ben-label">Estado</div><div class="kz-ben-value" style="color:#534AB7;">Pendiente de aprobación</div></div>
+        </div>
+        ${desperdicios.length > 0 ? `
+        <div style="margin-top:12px;">
+          <div style="font-size:11px;color:#888;margin-bottom:6px;">Desperdicios eliminados</div>
+          <div class="kz-desperdicios">${desperdicios.map(d => `<span class="kz-desp-tag">${d.trim()}</span>`).join('')}</div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <div class="kz-footer-doc">Generado con KaizenBot · ProKaizen Consulting · Orlando Querales</div>
+  </div>`;
+
+  document.getElementById('doc-content').innerHTML = html;
 }
 
-function downloadTxt() {
-  const blob = new Blob([proposalDoc], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const colabName = proposalDoc.match(/Colaborador:\s*(.+)/)?.[1]?.trim().replace(/\s+/g, '_') || 'propuesta';
-  const fecha = new Date().toISOString().split('T')[0];
-  a.download = `KaizenTeian_${colabName}_${fecha}.txt`;
-  a.click();
-  URL.revokeObjectURL(url);
+function closeDocModal() { document.getElementById('doc-modal').classList.remove('open'); }
+
+function printProposal() {
+  const content = document.getElementById('doc-content').innerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Propuesta KaizenTeian</title>
+  <style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:20px;background:#fff;}
+    .kz-wrap{max-width:700px;margin:0 auto;}
+    .kz-header{background:#534AB7;border-radius:12px;padding:20px 24px;margin-bottom:16px;}
+    .kz-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+    .kz-logo{font-size:18px;font-weight:700;color:#fff;}
+    .kz-logo span{font-size:11px;display:block;color:rgba(255,255,255,0.65);font-weight:400;margin-top:2px;}
+    .kz-id-badge{font-size:11px;background:rgba(255,255,255,0.2);color:#fff;padding:4px 12px;border-radius:20px;}
+    .kz-title{font-size:14px;font-weight:600;color:#fff;margin-bottom:12px;}
+    .kz-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .kz-meta-item{background:rgba(255,255,255,0.12);border-radius:8px;padding:8px 12px;}
+    .kz-meta-label{font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:2px;}
+    .kz-meta-value{font-size:13px;color:#fff;font-weight:500;}
+    .kz-section{border:0.5px solid #e8e8e8;border-radius:12px;margin-bottom:10px;overflow:hidden;}
+    .kz-section-header{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f7f8fc;border-bottom:0.5px solid #e8e8e8;}
+    .kz-section-icon{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+    .kz-section-title{font-size:13px;font-weight:600;color:#1a1a2e;}
+    .kz-section-body{padding:12px 14px;}
+    .kz-text{font-size:13px;color:#1a1a2e;line-height:1.7;}
+    .kz-porques{list-style:none;padding:0;margin:0;}
+    .kz-porques li{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:0.5px solid #f0f0f0;font-size:13px;color:#1a1a2e;}
+    .kz-porques li:last-child{border-bottom:none;}
+    .kz-pq-num{width:20px;height:20px;border-radius:50%;background:#EEEDFE;color:#534AB7;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+    .kz-causa{background:#EEEDFE;border-radius:8px;padding:10px 14px;font-size:13px;color:#3C3489;font-weight:500;margin-top:10px;}
+    .kz-beneficios{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .kz-ben-item{background:#f7f8fc;border-radius:8px;padding:10px 12px;}
+    .kz-ben-label{font-size:10px;color:#888;margin-bottom:3px;}
+    .kz-ben-value{font-size:13px;color:#1a1a2e;font-weight:500;}
+    .kz-desperdicios{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+    .kz-desp-tag{font-size:11px;background:#EEEDFE;color:#534AB7;padding:3px 10px;border-radius:20px;font-weight:500;}
+    .kz-footer-doc{text-align:center;padding:16px;border-top:0.5px solid #eee;margin-top:8px;font-size:11px;color:#aaa;}
+    @media print{body{padding:0;}}
+  </style></head><body>${content}</body></html>`);
+  win.document.close();
+  setTimeout(() => { win.print(); }, 500);
 }
 
+// NUEVA PROPUESTA
 function newProposal() {
-  if (history.length > 2 && !confirm('¿Deseas iniciar una nueva propuesta? Se perderá la conversación actual si no guardaste un borrador.')) return;
-  history = [];
-  proposalDoc = '';
-  proposalReady = false;
-  btnDownload.disabled = true;
-  btnSave.disabled = true;
-  messagesDiv.innerHTML = '';
-  phaseBadge.textContent = 'Iniciando...';
+  if (history.length > 4 && !confirm('¿Iniciar nueva propuesta? Se perderá la conversación actual si no guardaste un borrador.')) return;
+  history = []; proposalData = {}; proposalReady = false; currentProposalId = null;
+  btnDownload.disabled = true; btnSave.disabled = true;
+  messagesDiv.innerHTML = ''; phaseBadge.textContent = 'Iniciando...';
   init();
 }
 
+// INICIALIZACIÓN
 async function init() {
-  // Verificar si hay borrador guardado
   const draft = localStorage.getItem('kaizenbot_draft');
   if (draft) {
     try {
       const d = JSON.parse(draft);
       if (confirm(`Tienes un borrador guardado el ${d.timestamp}. ¿Deseas retomarlo?`)) {
-        history = d.history;
-        proposalDoc = d.proposalDoc || '';
-        proposalReady = d.proposalReady || false;
-        if (proposalReady) { btnDownload.disabled = false; }
+        history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalReady || false;
+        currentProposalId = d.currentProposalId || null;
+        if (proposalReady) btnDownload.disabled = false;
         btnSave.disabled = false;
-
-        // Reconstruir mensajes
-        for (const msg of history) {
-          addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
-        }
+        for (const msg of history) addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
         addMessage('bot', '✅ Borrador retomado. Continuemos desde donde lo dejaste.');
         sendBtn.disabled = false;
         return;
-      } else {
-        localStorage.removeItem('kaizenbot_draft');
-      }
-    } catch(e) {
-      localStorage.removeItem('kaizenbot_draft');
-    }
+      } else { localStorage.removeItem('kaizenbot_draft'); }
+    } catch(e) { localStorage.removeItem('kaizenbot_draft'); }
   }
 
-  // Inicio normal
   waiting = true;
   showTyping();
+  const fechaHoy = getCurrentDate();
   try {
-    const reply = await callAPI('Inicia la conversación. Preséntate brevemente como KaizenBot de ProKaizen Consulting, explica en una oración tu propósito y solicita el nombre completo del colaborador para comenzar.');
+    const reply = await callAPI(`Inicia la conversación presentándote brevemente como KaizenBot. La fecha de hoy es ${fechaHoy} — úsala automáticamente para los registros sin preguntársela al colaborador. Presenta el menú de inicio con las 3 opciones.`);
     hideTyping();
     addMessage('bot', reply);
     updateBadge(reply);
   } catch(err) {
     hideTyping();
     history = [];
-    addMessage('bot', '¡Hola! Soy KaizenBot, el asistente de mejora continua de ProKaizen Consulting.\n\nEstoy aquí para guiarte en la elaboración de una propuesta de mejora siguiendo la metodología Kaizen Teian.\n\n¿Cuál es tu nombre completo para comenzar?');
-    phaseBadge.textContent = 'Fase 1: Datos';
+    addMessage('bot', `¡Bienvenido a KaizenBot! Soy tu asistente de mejora continua de ProKaizen Consulting.\n\n¿Qué deseas hacer hoy?\n\n1️⃣ Iniciar una nueva propuesta\n2️⃣ Retomar una propuesta en borrador\n3️⃣ Consultar el estado de una propuesta`);
+    phaseBadge.textContent = 'Menú inicio';
   }
   waiting = false;
   sendBtn.disabled = false;
@@ -700,15 +703,6 @@ userInput.addEventListener('input', () => {
   userInput.style.height = Math.min(userInput.scrollHeight, 110) + 'px';
 });
 
-// Verificar API key
-if (API_KEY === "PEGA_TU_API_KEY_AQUI") {
-  setTimeout(() => {
-    addMessage('bot', '⚠️ **Configuración pendiente:** Por favor abre el archivo index.html y reemplaza PEGA_TU_API_KEY_AQUI con tu API key de Anthropic.');
-    sendBtn.disabled = true;
-  }, 500);
-} else {
-  init();
-}
 </script>
 </body>
 </html>
