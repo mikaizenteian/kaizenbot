@@ -6,10 +6,22 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
   try {
     const { proposal } = req.body;
+    const record = {
+      id_propuesta: proposal.id_propuesta,
+      colaborador: proposal.colaborador,
+      area: proposal.area,
+      proceso: proposal.proceso,
+      fecha: proposal.fecha,
+      estado: proposal.estado,
+      indicador: proposal.indicador,
+      desperdicios: proposal.desperdicios,
+      mejora_estimada: proposal.mejora_estimada,
+      propuestas_relacionadas: proposal.propuestas_relacionadas
+    };
     const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/propuestas`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': process.env.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`, 'Prefer': 'return=representation' },
-      body: JSON.stringify(proposal)
+      body: JSON.stringify(record)
     });
     if (!response.ok) { const error = await response.json(); return res.status(response.status).json({ error: error.message || 'Error al guardar' }); }
     const data = await response.json();
