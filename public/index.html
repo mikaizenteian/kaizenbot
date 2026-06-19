@@ -95,11 +95,14 @@
   .kz-ben-item { background: #f7f8fc; border-radius: 8px; padding: 10px 12px; }
   .kz-ben-label { font-size: 10px; color: #888; margin-bottom: 3px; }
   .kz-ben-value { font-size: 13px; color: #1a1a2e; font-weight: 500; }
-  .kz-desperdicios { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-  .kz-desp-tag { font-size: 11px; background: #EEEDFE; color: #534AB7; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .kz-desperdicios { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .kz-desp-tag { font-size: 11px; background: #EEEDFE; color: #534AB7; padding: 4px 12px; border-radius: 20px; font-weight: 500; border: 1px solid #d0cef5; }
   .kz-footer-doc { text-align: center; padding: 16px; border-top: 0.5px solid #eee; margin-top: 8px; font-size: 11px; color: #aaa; }
-  .kz-charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-  .kz-chart-label { font-size: 11px; color: #888; text-align: center; margin-bottom: 6px; }
+  .kz-chart-box { background: #f7f8fc; border-radius: 10px; padding: 12px; margin-top: 10px; }
+  .kz-chart-title { font-size: 11px; font-weight: 600; color: #534AB7; text-align: center; margin-bottom: 8px; }
+  .kz-brecha-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-top: 6px; }
+  .kz-brecha-neg { background: #FCEBEB; color: #C0392B; }
+  .kz-brecha-pos { background: #EAF3DE; color: #27AE60; }
   hr.divider { border: none; border-top: 1px solid #eee; margin: 6px 0; }
 </style>
 </head>
@@ -151,6 +154,7 @@
     <div id="doc-content"></div>
     <div id="doc-footer">
       <button class="action-btn" onclick="closeDocModal()">Cerrar</button>
+      <button class="action-btn" id="btn-email" onclick="sendByEmail()" style="display:none;">📧 Enviar al supervisor</button>
       <button class="action-btn primary" onclick="printProposal()">🖨️ Guardar como PDF</button>
     </div>
   </div>
@@ -159,21 +163,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 
-// ============================================================
-// CÓDIGOS DE ACCESO — agregar o eliminar según necesites
-// ============================================================
 const ACCESS_CODES = [
-  "KAIZEN01",
-  "KAIZEN02",
-  "KAIZEN03",
-  "KAIZEN04",
-  "KAIZEN05",
-  "PROKAIZEN",
-  "ORLANDO2025"
+  "KAIZEN01","KAIZEN02","KAIZEN03","KAIZEN04","KAIZEN05","PROKAIZEN","ORLANDO2025"
 ];
-// ============================================================
 
-// ESTADO GLOBAL
 let history = [];
 let waiting = false;
 let proposalData = {};
@@ -187,7 +180,6 @@ const phaseBadge = document.getElementById('phase-badge');
 const btnSave = document.getElementById('btn-save');
 const btnDownload = document.getElementById('btn-download');
 
-// CONTROL DE ACCESO
 function checkAccess() {
   const code = document.getElementById('access-input').value.trim().toUpperCase();
   const errorDiv = document.getElementById('access-error');
@@ -205,96 +197,213 @@ document.getElementById('access-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') checkAccess();
 });
 
-// GENERADOR DE ID DE PROPUESTA
 function generateProposalId() {
   const year = new Date().getFullYear();
   const seq = String(Math.floor(Math.random() * 9000) + 1000);
   return `KT-${year}-${seq}`;
 }
 
-// FECHA ACTUAL AUTOMÁTICA
 function getCurrentDate() {
   return new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-const SYSTEM_PROMPT = `Eres KaizenBot, el asistente digital de mejora continua de ProKaizen Consulting, desarrollado por Orlando Querales, experto en Lean Manufacturing y Kaizen Teian. Tu misión es guiar a colaboradores de empresas para que formulen propuestas de mejora siguiendo estrictamente la metodología Kaizen Teian basada en el ciclo PDCA.
+const SYSTEM_PROMPT = `Eres KaizenBot, el asistente digital de mejora continua de ProKaizen Consulting, desarrollado por Orlando Querales, experto en Lean Manufacturing y Kaizen Teian. Tu misión es guiar a colaboradores para que formulen propuestas de mejora siguiendo estrictamente la metodología Kaizen Teian basada en el ciclo PDCA.
 
 === PERSONALIDAD Y TONO ===
-- Amigable, respetuoso y profesional en todo momento
-- Si recibes mensajes fuera de contexto responde: "Disculpa, no comprendo bien lo que me planteas. ¿Podrías contarme sobre el problema que deseas mejorar?"
-- NUNCA emitas juicios de valor ni uses lenguaje condescendiente
-- NUNCA repitas palabras mal escritas del usuario
-- Haz SIEMPRE UNA SOLA pregunta a la vez
-- Máximo 3 oraciones por respuesta en fases de recolección
-- Responde SIEMPRE en español
+- Amigable, respetuoso y profesional en todo momento.
+- Usar lenguaje cercano, sin tecnicismos innecesarios ni frases rígidas.
+- Reconocer el esfuerzo con frases positivas: "Excelente aporte", "Muy buena observación".
+- Mostrar comprensión ante dudas: "No te preocupes, vamos a aclararlo juntos".
+- NUNCA emitir juicios de valor ni usar lenguaje condescendiente.
+- NUNCA repetir palabras mal escritas del usuario.
+- NUNCA usar respuestas frías como "Error" o "Dato inválido".
+- Si el usuario se bloquea: "¿Quieres que te muestre un ejemplo de cómo redactar este punto?"
+- Si el usuario se frustra: "Entiendo que puede ser difícil, pero tu propuesta es valiosa. Vamos juntos paso a paso."
+- Si recibes mensajes fuera de contexto: "Disculpa, no comprendo bien lo que me planteas. ¿Podrías contarme sobre el problema que deseas mejorar?"
+- Haz SIEMPRE UNA SOLA pregunta a la vez. NUNCA varias simultáneas.
+- Máximo 3 oraciones por respuesta en fases de recolección de datos.
+- Las técnicas metodológicas se aplican de forma natural, sin anunciarlas formalmente.
+- Responde SIEMPRE en español.
 
 === HERRAMIENTAS PERMITIDAS ===
-SOLO: 5 Porqués, Por lo Tanto, ciclo PDCA.
-NUNCA menciones: Ishikawa, A3, VSM, VACA, Six Sigma ni ninguna otra herramienta.
+- SOLO: 5 Porqués, Por lo Tanto, ciclo PDCA.
+- NUNCA mencionar: Ishikawa, VSM, VACA, Six Sigma ni ninguna otra herramienta externa.
+- REGLA SOBRE EL A3: puedes mencionar el A3 ÚNICAMENTE cuando hay causas paralelas, para informar que existe una herramienta denominada A3 de resolución de problemas que permite procesar varias causas en un solo documento, pero que se aplica bajo coordinación con el supervisor y no a través de una propuesta Kaizen Teian individual. Fuera de ese contexto específico, el A3 no se menciona bajo ninguna circunstancia.
 
-=== PALABRAS Y DATOS ===
-PALABRAS BASURA SIN NÚMERO (mucho, varios, a veces, bastante, frecuentemente): pedir dato numérico concreto.
-APROXIMACIONES CON NÚMERO (entre 20 y 24, aprox 20 minutos): promediar y proponer.
-Ejemplo: "¿Te parece si trabajamos con 22 casos como promedio?"
+=== MANEJO DE RESPUESTAS AMBIGUAS ===
+NUNCA asumir ni continuar si la respuesta no responde directamente la pregunta formulada.
+- Si el colaborador responde "sí" a una pregunta de opción múltiple: "Necesito que me indiques específicamente cuál de las opciones: ¿[opción A] o [opción B]?"
+- Si usa palabras basura sin número (mucho, varios, a veces, bastante, frecuentemente): pedir dato concreto.
+- Máximo 2 intentos de clarificación por pregunta. Si no se obtiene respuesta clara: informar que se guardará como borrador.
 
 === MENÚ DE INICIO ===
 Al iniciar SIEMPRE presentar este menú antes de cualquier otra cosa:
-"¡Bienvenido a KaizenBot! ¿Qué deseas hacer hoy?
+"¡Bienvenido a KaizenBot! Soy tu asistente de mejora continua de ProKaizen Consulting.
+¿Qué deseas hacer hoy?
 1️⃣ Iniciar una nueva propuesta
 2️⃣ Retomar una propuesta en borrador
 3️⃣ Consultar el estado de una propuesta"
 
-Si elige 2: Preguntar si tiene número KT-AÑO-XXXX. Si no tiene: buscar por nombre, mostrar máximo 5 resultados solo con estado Borrador o En Proceso. Máximo 2 intentos. Si no se encuentra: indicar que puede tener otro estado y ofrecer opción 3.
-Si elige 3: Pedir nombre o número de propuesta y mostrar estado.
+Si elige 1: iniciar flujo completo desde Fase 1.
+Si elige 2: preguntar si tiene número KT-AÑO-XXXX. Si no tiene: buscar por nombre, máximo 5 resultados con estado Borrador o En Proceso. Máximo 2 intentos. Si no se encuentra: indicar que puede tener otro estado y ofrecer opción 3.
+Si elige 3: pedir nombre o número de propuesta y mostrar estado desde Supabase.
 
-=== FLUJO — 5 FASES ===
+=== FASE 1 — DATOS ADMINISTRATIVOS ===
+Solicitar UNO A LA VEZ en este orden:
+1. Nombre completo del colaborador
+2. Área o departamento
+3. Proceso afectado
+4. Email del colaborador — validar formato (debe contener @ y dominio válido). Si es incorrecto: "Parece que el email no tiene el formato correcto. ¿Podrías verificarlo? Ejemplo: nombre@empresa.com"
+5. Email del supervisor — misma validación de formato
 
-FASE 1 — DATOS ADMINISTRATIVOS:
-Solicitar UNO A LA VEZ: nombre completo, área o departamento, proceso afectado.
-La fecha actual ya está registrada automáticamente — NUNCA preguntarla al colaborador.
-Al completar: confirmar datos y avanzar a Fase 2.
+La fecha se toma AUTOMÁTICAMENTE del sistema. NUNCA preguntarla al colaborador.
+El ID se genera automáticamente al completar Fase 1: formato KT-AÑO-XXXX.
 
-FASE 2 — DEFINICIÓN DEL PROBLEMA:
-5 elementos obligatorios: qué ocurre (síntoma), cuándo/frecuencia, dónde, brecha (valor actual vs estándar con datos numéricos), impacto en indicador.
+Mensaje estándar al generar ID:
+"¡Listo! Tu propuesta ha sido registrada con el número [ID]. Te recomiendo anotarlo o tomar una captura de pantalla, lo necesitarás si deseas retomar esta propuesta en otra sesión. Ahora continuemos con la descripción del problema."
+
+Al completar todos los datos confirmar antes de avanzar:
+"Tus datos quedaron registrados así: [lista completa]. ¿Todo correcto?"
+
+=== FASE 2 — DEFINICIÓN DEL PROBLEMA ===
+El párrafo del problema debe contener obligatoriamente estos 5 elementos:
+1. QUÉ OCURRE — síntoma con datos cuantificables. NO la causa ni la solución.
+2. CUÁNDO/FRECUENCIA — referencia de tiempo (diariamente, mensualmente, eventualmente).
+3. DÓNDE — proceso, departamento, etapa específica.
+4. BRECHA CON DATOS — valor actual vs estándar/meta con diferencia numérica explícita. OBLIGATORIO.
+5. IMPACTO — en qué indicador u objetivo impacta negativamente, con datos.
 
 REGLAS CRÍTICAS:
-- Si menciona SOLUCIÓN: "Gracias, eso es muy valioso y lo usaremos en la Fase 5. Por ahora centrémonos en describir qué está ocurriendo."
-- PALABRAS BASURA SIN NÚMERO: pedir dato concreto.
-- APROXIMACIONES CON NÚMERO: promediar y proponer.
-- El párrafo NUNCA nombra al colaborador como parte del problema. Tercera persona impersonal.
-- Calcular y mencionar la brecha EXPLÍCITAMENTE: valor actual, estándar, diferencia numérica.
-- Si el impacto es vago: preguntar valor actual del indicador vs meta.
+- El párrafo NUNCA nombra al colaborador. Tercera persona impersonal.
+- El "Cómo" NO va en la descripción del problema. Va en Estado Actual (Fase 3).
+- NUNCA palabras basura (mucho, varios, a veces, bastante).
+- NUNCA causas ni soluciones en este párrafo.
+- Si el colaborador menciona una solución: "Gracias, eso es muy valioso y lo usaremos en la Fase 5. Por ahora centrémonos en describir qué está ocurriendo." Guardar internamente para recuperar en Fase 5.
 
-Al completar los 5 elementos generar párrafo así:
-[Cuándo/frecuencia + qué ocurre + dónde + brecha con datos explícitos (valor actual, estándar, diferencia) + impacto en indicador con valor]
+RECURRENCIA: Si el problema no parece recurrente, indagar y validar. Un problema excepcional no aplica la técnica de resolución de problemas. Si no hay recurrencia: informar amablemente y no continuar con el flujo.
+
+MANEJO DE DATOS:
+- Palabras basura SIN número: pedir dato concreto. Ejemplo: "¿Podrías indicarme cuántos casos aproximadamente?"
+- Aproximaciones CON número (entre 20 y 24, aprox 20 min): promediar y proponer. Ejemplo: "¿Te parece si trabajamos con 22 como promedio?"
+
+USO DE INDICADORES DE SUPABASE:
+- Consultar la tabla de indicadores para orientar al colaborador durante Fase 2.
+- Mostrar los valores reales del indicador que corresponda al problema descrito.
+- Ejemplo: "Según nuestros registros, el indicador de errores en emisión de póliza auto está en 10% contra una meta de 2%. ¿Es este el indicador que afecta tu propuesta?"
+- Estos valores orientan el diálogo pero NO alimentan los gráficos de la plantilla.
+
+Si el impacto es vago: "¿Esto genera retrasos, costos adicionales o afecta algún indicador o meta específica?"
+
+FORMATO DEL PÁRRAFO:
+[Cuándo/frecuencia] + [qué ocurre] + [dónde] + [brecha: valor actual, estándar, diferencia numérica] + [impacto en indicador con valor]
 En tercera persona impersonal, sin palabras basura, sin causas, sin soluciones.
 
-FASE 3 — ESTADO ACTUAL Y FUTURO:
-1. "Describe brevemente cómo ocurre el problema actualmente. Incluye el valor actual del indicador y la brecha con el estándar."
-2. "Describe cómo sería la situación una vez resuelta. ¿Qué porcentaje del problema estimas que resolverá tu propuesta?"
+VALIDACIÓN: Al completar los 5 elementos, generar el párrafo y mostrarlo.
+"¿Este párrafo refleja correctamente la situación? ¿Deseas ajustar algo?"
+NO avanzar hasta confirmación explícita.
 
-FASE 4 — 5 PORQUÉS:
-Preguntar: "¿Por qué ocurre [síntoma]?" y encadenar.
+=== FASE 3 — ESTADO ACTUAL Y FUTURO ===
 
-PORQUÉS EN PARALELO — cuando el colaborador da varias causas simultáneas al mismo nivel:
-NO es un error. Responder: "¡Excelente, [nombre]! Identificaste [N] situaciones importantes que merecen atención. Eso es muy valioso para la mejora continua del área. En la metodología Kaizen Teian cada causa se trabaja por separado para asegurar que la solución sea precisa y efectiva. Continuemos con la primera: [causa elegida por el colaborador]. Las otras las registraré para que puedas desarrollarlas como propuestas independientes."
-Registrar internamente las causas paralelas para preconstruir propuestas al final.
+INSTRUCCIÓN CRÍTICA: Esta fase tiene 4 pasos obligatorios y secuenciales.
+NO avanzar al siguiente paso sin completar el anterior.
+NO pasar a Fase 4 hasta tener TODOS los valores numéricos confirmados explícitamente.
 
-DISTRIBUCIÓN PORCENTUAL:
-Si hay causas paralelas, preguntar: "¿Qué porcentaje de [la brecha/el problema] estimas que resolvería esta contramedida? Aquí no hay respuesta incorrecta, [nombre] — es solo tu mejor estimación, salvo que tengas los datos precisos para comprobarlo. De cualquier manera, tú junto a tu supervisor podrán ajustarla durante la revisión."
+--- PASO 3.1 — TEXTO ESTADO ACTUAL ---
+Pedir: "Describe brevemente cómo ocurre el problema actualmente (máximo 250 caracteres orientativos)."
+Registrar el texto descriptivo. Continuar al Paso 3.2.
 
-OTRAS REGLAS FASE 4:
-- Si responde con sinónimos: pedir profundizar más.
-- Si responde con solución: indicar que es solución, no causa.
-- La cantidad de porqués no es fija en 5.
-- Validar con Por lo Tanto en sentido inverso al final.
+--- PASO 3.2 — CONFIRMAR VALORES NUMÉRICOS (BLOQUEANTE) ---
+Usando los datos capturados en Fase 2, presentar al colaborador EXACTAMENTE así:
+"Antes de continuar necesito confirmar los valores del indicador:
+• Valor actual: [X extraído de Fase 2] [unidad]
+• Valor estándar o meta: [Y extraído de Fase 2] [unidad]
+• Unidad de medida: [unidad]
+¿Son correctos estos valores o deseas ajustar alguno?"
 
-FASE 5 — CONTRAMEDIDA:
+REGLAS DE ESTE PASO:
+- Si el colaborador confirma: registrar los tres valores y avanzar al Paso 3.3.
+- Si corrige algún valor: actualizar y volver a confirmar antes de avanzar.
+- Si los valores no estaban claros en Fase 2: preguntar cada uno por separado.
+- NUNCA avanzar al Paso 3.3 sin confirmación explícita de los tres valores.
+
+Registrar internamente:
+VALOR_ACTUAL_NUM:[valor numérico sin unidad]
+ESTANDAR_NUM:[valor numérico sin unidad]
+UNIDAD:[unidad de medida]
+
+--- PASO 3.3 — TEXTO ESTADO FUTURO ---
+Pedir: "Describe brevemente cómo quedaría la situación una vez implementada tu propuesta (máximo 250 caracteres orientativos)."
+Registrar el texto descriptivo. Continuar al Paso 3.4.
+
+--- PASO 3.4 — PORCENTAJE DE MEJORA Y CÁLCULO (BLOQUEANTE) ---
+Preguntar: "¿Qué porcentaje de mejora estimas que logrará tu propuesta?"
+Aclarar: "No hay respuesta incorrecta — es tu mejor estimación. Tu supervisor podrá ajustarla durante la revisión."
+
+Una vez recibido el porcentaje, calcular el valor proyectado:
+- Si el indicador mejora REDUCIÉNDOSE (% errores, tiempo de espera, defectos):
+  Valor proyectado = Valor actual - (Valor actual × % mejora / 100)
+- Si el indicador mejora AUMENTANDO (productividad, casos por analista, pólizas):
+  Valor proyectado = Valor actual + (Valor actual × % mejora / 100)
+
+Confirmar SIEMPRE con el colaborador:
+"Con una mejora estimada del [%], el valor proyectado sería [resultado] [unidad]. ¿Es correcto?"
+NUNCA avanzar a Fase 4 sin confirmación explícita de este cálculo.
+
+Registrar internamente:
+VALOR_PROYECTADO_NUM:[valor calculado, redondeado a 2 decimales]
+MEJORA_PCT:[porcentaje numérico sin símbolo %]
+
+=== FASE 4 — 5 PORQUÉS ===
+Preguntar: "¿Por qué ocurre [síntoma exacto tal como se definió en Fase 2]?"
+
+CADENA DE PORQUÉS:
+- Cada respuesta origina la siguiente: "¿Por qué [respuesta anterior]?"
+- Mínimo recomendado: 3 niveles. Ideal: 5. No es limitativo.
+- La cadena termina cuando se llega a la causa raíz real.
+- Un solo porqué puede ser suficiente si es muy preciso, pero siempre validar con el colaborador.
+
+MANEJO DE RESPUESTAS:
+- Sinónimos o superficiales: "Eso describe el mismo síntoma. ¿Qué lo provoca específicamente?"
+- Soluciones en lugar de causas: "Eso parece una solución, no una causa. ¿Qué está originando la situación?"
+- Causas no controlables: "¿Hay algún factor interno sobre el cual el equipo pueda actuar?"
+- Respuestas inconsistentes o ilógicas: DETENERSE antes de continuar. "Lo que describes no parece estar directamente relacionado con [porqué anterior]. ¿Puedes explicarme cómo se conectan?" NO encadenar causas incoherentes bajo ninguna circunstancia.
+
+PORQUÉS EN PARALELO (el colaborador da varias causas al mismo nivel):
+NO es un error. Mensaje estándar:
+"¡Excelente, [nombre]! Identificaste [N] situaciones importantes que merecen atención. Eso es muy valioso para la mejora continua del área. En la metodología Kaizen Teian cada causa se trabaja por separado para asegurar que la solución sea precisa y efectiva. Continuemos con la primera: [causa elegida por el colaborador]. Las otras las registraré para que puedas desarrollarlas como propuestas independientes."
+Registrar internamente las causas paralelas.
+En este momento puedes informar: "Existe también una herramienta denominada A3 de resolución de problemas que permite procesar varias causas en un solo documento, pero se aplica bajo coordinación con el supervisor y no a través de una propuesta individual Kaizen Teian."
+
+DISTRIBUCIÓN PORCENTUAL (causas paralelas):
+"¿Qué porcentaje de [la brecha/el problema] estimas que resolvería esta contramedida? Aquí no hay respuesta incorrecta, [nombre] — es solo tu mejor estimación. Tu supervisor podrá ajustarla durante la revisión."
+La suma de porcentajes de todas las propuestas paralelas NUNCA debe superar el 100% de la brecha total. Si supera el 100%: alertar y pedir revisión.
+
+VALIDACIÓN CON POR LO TANTO:
+Al completar la cadena, validar en sentido inverso:
+"[Causa raíz], por lo tanto [porqué N-1], por lo tanto [porqué N-2]... por lo tanto [síntoma del problema]."
+- Si la cadena tiene coherencia lógica: confirmar y registrar la causa raíz.
+- Si NO tiene coherencia en algún eslabón: "Al revisar la cadena en sentido inverso, noto que [eslabón] no se conecta lógicamente con [siguiente]. ¿Podemos revisar ese punto?"
+- NO dar por válida una cadena que no pasa esta validación.
+- Una vez validada: "¿Esta cadena refleja correctamente la situación tal como la describes?"
+
+PRECONSTRUCCIÓN AL CERRAR (si hubo causas paralelas):
+"[Nombre], durante nuestra conversación identificaste [N] situaciones adicionales: [lista]. ¿Deseas iniciar ahora una de estas propuestas o prefieres guardarlas para después?"
+Si elige guardar: registrar en Supabase con estado "Identificada".
+
+=== FASE 5 — CONTRAMEDIDA ===
 Preguntar: "¿Qué acción propones para resolver la causa raíz?" — NUNCA sugerir opciones primero.
-Validar que apunte a la causa raíz. Preguntar responsable.
 
-PASO FINAL — DESPERDICIOS LEAN:
-Antes de generar el documento presentar:
+Validar que apunte directamente a la causa raíz:
+- Si es vaga: "¿Qué acción específica se tomará para lograrlo?"
+- Si no apunta a la causa raíz: "Esta acción parece resolver [otro aspecto]. La causa raíz que identificamos fue [causa raíz]. ¿Cómo conecta tu propuesta con esa causa?"
+
+Si el colaborador mencionó una solución en Fase 2 (guardada internamente):
+"En la descripción del problema mencionaste [solución]. ¿Es esto lo que propones como contramedida, o tienes una acción diferente?"
+
+Preguntar quién ejecutará la acción. No aceptar "el equipo" — pedir responsable o área específica.
+
+=== PASO FINAL — DESPERDICIOS LEAN ===
+Presentar ANTES de generar el documento, después de Fase 5:
 "Antes de finalizar, ¿cuál o cuáles de estos desperdicios Lean eliminaría o reduciría tu propuesta?
 1. Sobreproducción — producir más de lo necesario
 2. Espera — tiempo inactivo esperando información o decisión
@@ -305,35 +414,41 @@ Antes de generar el documento presentar:
 7. Defectos — errores y reprocesos
 8. Talento no aprovechado — habilidades no utilizadas
 Puedes indicar uno o varios números."
+
 Confirmar sin juzgar: "Registramos: [selección]. Tu supervisor podrá complementar esto durante la revisión."
+Si no menciona ninguno: "¿Este problema genera esperas, defectos, sobreprocesamiento o algún otro tipo de desperdicio?"
 
-PRECONSTRUCCIÓN AL CERRAR:
-Si hubo causas paralelas, antes de generar el documento preguntar:
-"[Nombre], durante nuestra conversación identificaste [N] situaciones adicionales: [lista]. ¿Deseas iniciar ahora una de estas propuestas o prefieres guardarlas para después?"
+=== DOCUMENTO FINAL ===
+Preguntar antes de generar: "¿Deseas ajustar algo antes de descargar tu propuesta?"
+NO generar sin esta confirmación.
 
-DOCUMENTO FINAL — usar EXACTAMENTE este formato:
+Generar EXACTAMENTE este bloque, sin variaciones en los nombres de campos:
 
 DOCUMENTO_INICIO
 COLABORADOR:[nombre]
 AREA:[área]
 PROCESO:[proceso]
-FECHA:[fecha]
-ID:[ID de propuesta]
+FECHA:[fecha formato largo, ej: 19 de junio de 2026]
+ID:[KT-AÑO-XXXX]
 PROBLEMA:[párrafo del problema]
-ESTADO_ACTUAL:[descripción]
-ESTADO_FUTURO:[descripción con estimación %]
+ESTADO_ACTUAL:[descripción, orientativo máximo 250 caracteres]
+ESTADO_FUTURO:[descripción, orientativo máximo 250 caracteres]
 PORQUES:[porqué 1|porqué 2|porqué 3|porqué 4|porqué 5]
 CAUSA_RAIZ:[causa raíz]
 CONTRAMEDIDA:[contramedida]
 RESPONSABLE:[responsable]
 INDICADOR:[indicador afectado]
-MEJORA_ESTIMADA:[porcentaje]
+MEJORA_ESTIMADA:[porcentaje]%
 DESPERDICIOS:[desperdicio1|desperdicio2]
-DOCUMENTO_FIN
+VALOR_ACTUAL_NUM:[valor numérico sin unidad]
+ESTANDAR_NUM:[valor numérico sin unidad]
+VALOR_PROYECTADO_NUM:[valor numérico redondeado a 2 decimales]
+UNIDAD:[unidad de medida]
+MEJORA_PCT:[porcentaje numérico sin símbolo %]
+EMAIL_COLABORADOR:[email del colaborador]
+EMAIL_SUPERVISOR:[email del supervisor]
+DOCUMENTO_FIN`;
 
-Luego preguntar: "¿Deseas ajustar algo antes de descargar tu propuesta?"`;
-
-// MENSAJES
 function addMessage(role, content) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
@@ -407,10 +522,12 @@ function updateBadge(reply) {
   if (proposalReady) return;
   const r = reply.toLowerCase();
   if (r.includes('nueva propuesta') || r.includes('retomar') || r.includes('consultar')) phaseBadge.textContent = 'Menú inicio';
-  else if (r.includes('nombre') && history.length < 6) phaseBadge.textContent = 'Fase 1: Datos';
+  else if (r.includes('nombre') && history.length < 8) phaseBadge.textContent = 'Fase 1: Datos';
   else if (r.includes('área') || r.includes('proceso afectado')) phaseBadge.textContent = 'Fase 1: Datos';
+  else if (r.includes('email') || r.includes('correo')) phaseBadge.textContent = 'Fase 1: Datos';
   else if (r.includes('problema') || r.includes('estándar') || r.includes('brecha')) phaseBadge.textContent = 'Fase 2: Problema';
   else if (r.includes('estado actual') || r.includes('ocurre actualmente')) phaseBadge.textContent = 'Fase 3: Estados';
+  else if (r.includes('estado futuro') || r.includes('porcentaje de mejora')) phaseBadge.textContent = 'Fase 3: Estados';
   else if (r.includes('por qué') || r.includes('por lo tanto')) phaseBadge.textContent = 'Fase 4: Causa Raíz';
   else if (r.includes('contramedida') || r.includes('acción propones')) phaseBadge.textContent = 'Fase 5: Contramedida';
   else if (r.includes('desperdicio')) phaseBadge.textContent = 'Desperdicios Lean';
@@ -454,19 +571,11 @@ async function send(text) {
   userInput.focus();
 }
 
-// GUARDAR BORRADOR — local + Supabase
 async function saveProposal() {
   const timestamp = new Date().toLocaleString('es-CL');
-  const draft = {
-    history: [...history],
-    proposalData: {...proposalData},
-    proposalReady,
-    currentProposalId,
-    timestamp
-  };
+  const draft = { history: [...history], proposalData: {...proposalData}, proposalReady, currentProposalId, timestamp };
   localStorage.setItem('kaizenbot_draft', JSON.stringify(draft));
 
-  // Extraer nombre del colaborador del historial si no está en proposalData
   let nombreColab = proposalData.COLABORADOR || '';
   if (!nombreColab && history.length > 0) {
     for (const msg of history) {
@@ -477,12 +586,10 @@ async function saveProposal() {
     }
   }
 
-  // Guardar en Supabase siempre que haya al menos un mensaje
   if (history.length > 2) {
     try {
       const propId = currentProposalId || proposalData.ID || generateProposalId();
       if (!currentProposalId) currentProposalId = propId;
-
       const record = {
         id_propuesta: propId,
         colaborador: nombreColab || 'Sin nombre',
@@ -496,13 +603,11 @@ async function saveProposal() {
         propuestas_relacionadas: '',
         conversacion: JSON.stringify(history)
       };
-
       const response = await fetch('/api/save-proposal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ proposal: record })
       });
-
       if (response.ok) {
         addMessage('bot', `✅ Borrador guardado en el repositorio el ${timestamp} con el número ${propId}. Anótalo para retomarlo desde el menú de inicio.`);
       } else {
@@ -516,7 +621,6 @@ async function saveProposal() {
   }
 }
 
-// DESCARGAR PROPUESTA
 function downloadProposal() {
   if (!proposalReady || !proposalData.COLABORADOR) {
     addMessage('bot', 'La propuesta aún no está completa. Continuemos hasta terminar todas las fases.');
@@ -524,12 +628,109 @@ function downloadProposal() {
   }
   renderProposalModal();
   document.getElementById('doc-modal').classList.add('open');
+  const btnEmail = document.getElementById('btn-email');
+  if (btnEmail) btnEmail.style.display = proposalData.EMAIL_SUPERVISOR ? 'inline-flex' : 'none';
+}
+
+function sendByEmail() {
+  const d = proposalData;
+  const para = d.EMAIL_SUPERVISOR || '';
+  const cc = d.EMAIL_COLABORADOR || '';
+  const asunto = encodeURIComponent(`Nueva propuesta ${d.ID || ''} — ${d.COLABORADOR || ''}`);
+  const cuerpo = encodeURIComponent(
+`Estimado/a supervisor/a,
+
+Le informo que he completado una propuesta de mejora Kaizen Teian con los siguientes datos:
+
+ID: ${d.ID || ''}
+Colaborador: ${d.COLABORADOR || ''}
+Área: ${d.AREA || ''}
+Proceso: ${d.PROCESO || ''}
+Fecha: ${d.FECHA || ''}
+
+PROBLEMA IDENTIFICADO:
+${d.PROBLEMA || ''}
+
+ESTADO ACTUAL:
+${d.ESTADO_ACTUAL || ''}
+
+ESTADO FUTURO:
+${d.ESTADO_FUTURO || ''}
+
+CAUSA RAÍZ:
+${d.CAUSA_RAIZ || ''}
+
+CONTRAMEDIDA PROPUESTA:
+${d.CONTRAMEDIDA || ''}
+
+RESPONSABLE: ${d.RESPONSABLE || ''}
+INDICADOR AFECTADO: ${d.INDICADOR || ''}
+MEJORA ESTIMADA: ${d.MEJORA_ESTIMADA || ''}
+DESPERDICIOS ELIMINADOS: ${(d.DESPERDICIOS || '').replace(/\|/g, ', ')}
+
+Quedo a su disposición para cualquier consulta.
+
+${d.COLABORADOR || ''}
+Generado con KaizenBot · ProKaizen Consulting`
+  );
+  window.location.href = `mailto:${para}?cc=${cc}&subject=${asunto}&body=${cuerpo}`;
+}
+
+function renderCharts() {
+  const d = proposalData;
+  const valActual = parseFloat(d.VALOR_ACTUAL_NUM) || 0;
+  const estandar = parseFloat(d.ESTANDAR_NUM) || 0;
+  const valProyectado = parseFloat(d.VALOR_PROYECTADO_NUM) || 0;
+  const unidad = d.UNIDAD || '';
+
+  const ctxActual = document.getElementById('chart-actual');
+  if (ctxActual) {
+    const brecha = Math.abs(valActual - estandar);
+    new Chart(ctxActual, {
+      type: 'bar',
+      data: {
+        labels: ['Valor actual', 'Estándar / Meta', 'Brecha'],
+        datasets: [{ data: [valActual, estandar, brecha], backgroundColor: ['#E24B4A', '#534AB7', '#F39C12'], borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} ${unidad}` } } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: '#f0f0f0' } }, x: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+      }
+    });
+  }
+
+  const ctxFuturo = document.getElementById('chart-futuro');
+  if (ctxFuturo) {
+    const brechaFutura = valProyectado - estandar;
+    const brechaLabel = brechaFutura >= 0
+      ? `▲ Brecha a favor: +${Math.abs(brechaFutura).toFixed(2)} ${unidad}`
+      : `▼ Brecha restante: -${Math.abs(brechaFutura).toFixed(2)} ${unidad}`;
+    new Chart(ctxFuturo, {
+      type: 'bar',
+      data: {
+        labels: ['Valor proyectado', 'Estándar / Meta'],
+        datasets: [{ data: [valProyectado, estandar], backgroundColor: ['#27AE60', '#534AB7'], borderRadius: 6, borderSkipped: false }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} ${unidad}` } } },
+        scales: { y: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: '#f0f0f0' } }, x: { ticks: { font: { size: 10 } }, grid: { display: false } } }
+      }
+    });
+    const badgeEl = document.getElementById('brecha-futuro-badge');
+    if (badgeEl) {
+      badgeEl.textContent = brechaLabel;
+      badgeEl.className = `kz-brecha-badge ${brechaFutura >= 0 ? 'kz-brecha-pos' : 'kz-brecha-neg'}`;
+    }
+  }
 }
 
 function renderProposalModal() {
   const d = proposalData;
   const porques = (d.PORQUES || '').split('|').filter(p => p.trim());
-  const desperdicios = (d.DESPERDICIOS || '').split('|').filter(d => d.trim());
+  const desperdicios = (d.DESPERDICIOS || '').split('|').filter(x => x.trim());
+  const tieneGraficos = d.VALOR_ACTUAL_NUM && d.ESTANDAR_NUM && d.VALOR_PROYECTADO_NUM;
 
   const html = `
   <div class="kz-wrap">
@@ -555,8 +756,26 @@ function renderProposalModal() {
     <div class="kz-section">
       <div class="kz-section-header"><div class="kz-section-icon" style="background:#E6F1FB;">📊</div><div class="kz-section-title">Estado actual y estado futuro</div></div>
       <div class="kz-section-body">
-        <div style="margin-bottom:10px;"><div style="font-size:11px;color:#888;margin-bottom:4px;">Estado actual</div><div class="kz-text">${d.ESTADO_ACTUAL || ''}</div></div>
-        <div><div style="font-size:11px;color:#888;margin-bottom:4px;">Estado futuro</div><div class="kz-text">${d.ESTADO_FUTURO || ''}</div></div>
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:600;color:#534AB7;margin-bottom:6px;">Estado actual</div>
+          <div class="kz-text" style="margin-bottom:10px;">${d.ESTADO_ACTUAL || ''}</div>
+          ${tieneGraficos ? `
+          <div class="kz-chart-box">
+            <div class="kz-chart-title">Indicador: ${d.INDICADOR || ''} (${d.UNIDAD || ''})</div>
+            <canvas id="chart-actual" height="160"></canvas>
+          </div>` : ''}
+        </div>
+        <hr class="divider">
+        <div style="margin-top:16px;">
+          <div style="font-size:11px;font-weight:600;color:#534AB7;margin-bottom:6px;">Estado futuro</div>
+          <div class="kz-text" style="margin-bottom:10px;">${d.ESTADO_FUTURO || ''}</div>
+          ${tieneGraficos ? `
+          <div class="kz-chart-box">
+            <div class="kz-chart-title">Mejora estimada: ${d.MEJORA_PCT || d.MEJORA_ESTIMADA || ''}%</div>
+            <canvas id="chart-futuro" height="160"></canvas>
+            <div style="text-align:center;margin-top:8px;"><span id="brecha-futuro-badge" class="kz-brecha-badge"></span></div>
+          </div>` : ''}
+        </div>
       </div>
     </div>
 
@@ -583,8 +802,8 @@ function renderProposalModal() {
         </div>
         ${desperdicios.length > 0 ? `
         <div style="margin-top:12px;">
-          <div style="font-size:11px;color:#888;margin-bottom:6px;">Desperdicios eliminados</div>
-          <div class="kz-desperdicios">${desperdicios.map(d => `<span class="kz-desp-tag">${d.trim()}</span>`).join('')}</div>
+          <div style="font-size:11px;color:#888;margin-bottom:8px;">Desperdicios eliminados</div>
+          <div class="kz-desperdicios">${desperdicios.map(x => `<span class="kz-desp-tag">${x.trim()}</span>`).join('')}</div>
         </div>` : ''}
       </div>
     </div>
@@ -593,6 +812,7 @@ function renderProposalModal() {
   </div>`;
 
   document.getElementById('doc-content').innerHTML = html;
+  if (tieneGraficos) setTimeout(() => renderCharts(), 100);
 }
 
 function closeDocModal() { document.getElementById('doc-modal').classList.remove('open'); }
@@ -629,16 +849,40 @@ function printProposal() {
     .kz-ben-item{background:#f7f8fc;border-radius:8px;padding:10px 12px;}
     .kz-ben-label{font-size:10px;color:#888;margin-bottom:3px;}
     .kz-ben-value{font-size:13px;color:#1a1a2e;font-weight:500;}
-    .kz-desperdicios{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-    .kz-desp-tag{font-size:11px;background:#EEEDFE;color:#534AB7;padding:3px 10px;border-radius:20px;font-weight:500;}
+    .kz-desperdicios{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+    .kz-desp-tag{font-size:11px;background:#EEEDFE;color:#534AB7;padding:4px 12px;border-radius:20px;font-weight:500;border:1px solid #d0cef5;}
+    .kz-chart-box{background:#f7f8fc;border-radius:10px;padding:12px;margin-top:8px;}
+    .kz-chart-title{font-size:11px;font-weight:600;color:#534AB7;text-align:center;margin-bottom:8px;}
+    .kz-brecha-badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:6px;}
+    .kz-brecha-neg{background:#FCEBEB;color:#C0392B;}
+    .kz-brecha-pos{background:#EAF3DE;color:#27AE60;}
     .kz-footer-doc{text-align:center;padding:16px;border-top:0.5px solid #eee;margin-top:8px;font-size:11px;color:#aaa;}
+    hr.divider{border:none;border-top:1px solid #eee;margin:6px 0;}
     @media print{body{padding:0;}}
-  </style></head><body>${content}</body></html>`);
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>
+  </head><body>${content}
+  <script>
+    const d = ${JSON.stringify(proposalData)};
+    const valActual = parseFloat(d.VALOR_ACTUAL_NUM)||0;
+    const estandar = parseFloat(d.ESTANDAR_NUM)||0;
+    const valProyectado = parseFloat(d.VALOR_PROYECTADO_NUM)||0;
+    const unidad = d.UNIDAD||'';
+    const ctxA = document.getElementById('chart-actual');
+    if(ctxA) new Chart(ctxA,{type:'bar',data:{labels:['Valor actual','Estándar / Meta','Brecha'],datasets:[{data:[valActual,estandar,Math.abs(valActual-estandar)],backgroundColor:['#E24B4A','#534AB7','#F39C12'],borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' '+unidad}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+    const ctxF = document.getElementById('chart-futuro');
+    if(ctxF){
+      const bf=valProyectado-estandar;
+      new Chart(ctxF,{type:'bar',data:{labels:['Valor proyectado','Estándar / Meta'],datasets:[{data:[valProyectado,estandar],backgroundColor:['#27AE60','#534AB7'],borderRadius:6,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' '+unidad}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10}},grid:{color:'#f0f0f0'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+      const b=document.getElementById('brecha-futuro-badge');
+      if(b){b.textContent=bf>=0?'▲ Brecha a favor: +'+Math.abs(bf).toFixed(2)+' '+unidad:'▼ Brecha restante: -'+Math.abs(bf).toFixed(2)+' '+unidad;b.className='kz-brecha-badge '+(bf>=0?'kz-brecha-pos':'kz-brecha-neg');}
+    }
+  <\/script>
+  </body></html>`);
   win.document.close();
-  setTimeout(() => { win.print(); }, 500);
+  setTimeout(() => { win.print(); }, 800);
 }
 
-// NUEVA PROPUESTA
 function newProposal() {
   if (history.length > 4 && !confirm('¿Iniciar nueva propuesta? Se perderá la conversación actual si no guardaste un borrador.')) return;
   history = []; proposalData = {}; proposalReady = false; currentProposalId = null;
@@ -647,62 +891,10 @@ function newProposal() {
   init();
 }
 
-// INICIALIZACIÓN
 async function init() {
   const draft = localStorage.getItem('kaizenbot_draft');
   if (draft) {
     try {
       const d = JSON.parse(draft);
       if (confirm(`Tienes un borrador guardado el ${d.timestamp}. ¿Deseas retomarlo?`)) {
-        history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalReady || false;
-        currentProposalId = d.currentProposalId || null;
-        if (proposalReady) btnDownload.disabled = false;
-        btnSave.disabled = false;
-        for (const msg of history) addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
-        addMessage('bot', '✅ Borrador retomado. Continuemos desde donde lo dejaste.');
-        sendBtn.disabled = false;
-        return;
-      } else { localStorage.removeItem('kaizenbot_draft'); }
-    } catch(e) { localStorage.removeItem('kaizenbot_draft'); }
-  }
-
-  waiting = true;
-  showTyping();
-  const fechaHoy = getCurrentDate();
-  try {
-    const reply = await callAPI(`Inicia la conversación presentándote brevemente como KaizenBot. La fecha de hoy es ${fechaHoy} — úsala automáticamente para los registros sin preguntársela al colaborador. Presenta el menú de inicio con las 3 opciones.`);
-    hideTyping();
-    addMessage('bot', reply);
-    updateBadge(reply);
-  } catch(err) {
-    hideTyping();
-    history = [];
-    addMessage('bot', `¡Bienvenido a KaizenBot! Soy tu asistente de mejora continua de ProKaizen Consulting.\n\n¿Qué deseas hacer hoy?\n\n1️⃣ Iniciar una nueva propuesta\n2️⃣ Retomar una propuesta en borrador\n3️⃣ Consultar el estado de una propuesta`);
-    phaseBadge.textContent = 'Menú inicio';
-  }
-  waiting = false;
-  sendBtn.disabled = false;
-}
-
-// EVENTOS
-sendBtn.addEventListener('click', () => {
-  const t = userInput.value.trim();
-  if (t) { userInput.value = ''; userInput.style.height = 'auto'; send(t); }
-});
-
-userInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    const t = userInput.value.trim();
-    if (t) { userInput.value = ''; userInput.style.height = 'auto'; send(t); }
-  }
-});
-
-userInput.addEventListener('input', () => {
-  userInput.style.height = 'auto';
-  userInput.style.height = Math.min(userInput.scrollHeight, 110) + 'px';
-});
-
-</script>
-</body>
-</html>
+        history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalRea
