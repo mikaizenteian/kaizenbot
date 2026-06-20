@@ -28,10 +28,10 @@ export default async function handler(req, res) {
     }
 
     return res.status(200).json({
-      nombre: data['Nombre completo'] || '',
-      area: data['Área / Departamento'] || '',
-      email_colaborador: data['email colaborador'] || '',
-      email_supervisor: data['email supervisor'] || ''
+      nombre: data.nombre || '',
+      area: data.area || '',
+      email_colaborador: data.email_colaborador || '',
+      email_supervisor: data.email_supervisor || ''
     });
 
   } catch (err) {
