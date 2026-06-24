@@ -268,7 +268,11 @@ async function checkEmployee() {
   proposalData.EMAIL_SUPERVISOR = colab.email_supervisor;
 }
 
-function confirmEmployee() {
+ffunction confirmEmployee() {
+  sessionStorage.setItem('kb_nombre', proposalData.COLABORADOR || '');
+  sessionStorage.setItem('kb_area', proposalData.AREA || '');
+  sessionStorage.setItem('kb_email_colab', proposalData.EMAIL_COLABORADOR || '');
+  sessionStorage.setItem('kb_email_sup', proposalData.EMAIL_SUPERVISOR || '');
   document.getElementById('employee-screen').classList.remove('active');
   init();
 }
