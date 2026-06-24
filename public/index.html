@@ -557,8 +557,17 @@ function addMessage(role, content) {
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
 
-  if (content.includes('DOCUMENTO_INICIO') && content.includes('DOCUMENTO_FIN')) {
+if (content.includes('DOCUMENTO_INICIO') && content.includes('DOCUMENTO_FIN')) {
     parseProposalData(content);
+    // Restaurar datos reales de Supabase si el bot los escribió como placeholders
+    const colaboradorReal = sessionStorage.getItem('kb_nombre');
+    const areaReal = sessionStorage.getItem('kb_area');
+    const emailColab = sessionStorage.getItem('kb_email_colab');
+    const emailSup = sessionStorage.getItem('kb_email_sup');
+    if (colaboradorReal) proposalData.COLABORADOR = colaboradorReal;
+    if (areaReal) proposalData.AREA = areaReal;
+    if (emailColab) proposalData.EMAIL_COLABORADOR = emailColab;
+    if (emailSup) proposalData.EMAIL_SUPERVISOR = emailSup;
     proposalReady = true;
     btnDownload.disabled = false;
     btnSave.disabled = false;
