@@ -302,6 +302,17 @@ async function getCollaborator(numeroEmpleado) {
   }
 }
 
+async function getIndicadores() {
+  try {
+    const response = await fetch('/api/get-indicadores');
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.indicadores || [];
+  } catch (e) {
+    return null;
+  }
+}
+
 const SYSTEM_PROMPT = `Eres KaizenBot, el asistente digital de mejora continua de ProKaizen Consulting. Guías a colaboradores para formular propuestas de mejora siguiendo estrictamente la metodología Kaizen Teian basada en el ciclo PDCA.
 
 === REGLAS GLOBALES ===
@@ -356,7 +367,7 @@ REGLAS:
 - DETECCIÓN ACTIVA DEL "CÓMO": si el colaborador describe CÓMO ocurre el problema (la mecánica, los pasos, la manera en que sucede), detente y responde: "Ese detalle de cómo ocurre es muy valioso y lo usaremos al describir el Estado Actual. Por ahora concentrémonos en qué ocurre, dónde, con qué frecuencia y cuál es su impacto." Guarda internamente ese contenido para proponerlo en el Paso 3.1. El "cómo" NUNCA entra en el párrafo del problema.
 - Si menciona una solución: "Gracias, eso es muy valioso y lo usaremos en la Fase 5. Por ahora centrémonos en describir qué está ocurriendo." Guárdala internamente para recuperarla en Fase 5.
 - RECURRENCIA: si el problema no parece recurrente, indaga y valida. Un problema excepcional no aplica esta metodología: infórmalo amablemente y no continúes el flujo.
-- IMPACTO CON DATOS (bloqueante): NO aceptes impactos vagos ("afecta la experiencia del cliente"). Exige el indicador afectado con su valor actual y su meta. Si el contexto de la conversación incluye datos de indicadores provistos por el sistema, ofrécelos: "Según nuestros registros, [indicador] está en [valor] contra una meta de [meta]. ¿Es este el indicador que afecta tu propuesta?". Esos valores orientan el diálogo pero NO alimentan los gráficos: los gráficos usan solo los valores confirmados por el colaborador en Fase 3. NO avances a Fase 3 sin brecha e impacto numéricos.
+- IMPACTO CON DATOS (bloqueante): NO aceptes impactos vagos ("afecta la experiencia del cliente"). Exige el indicador afectado con su valor actual y su meta. El primer mensaje del sistema incluye la lista real de indicadores y objetivos disponibles (nombre, tipo, valor actual, meta). Si el problema descrito se relaciona con alguno de esos indicadores, ofrécelo proactivamente con sus valores reales: "Según nuestros registros, [indicador] está en [valor actual] contra una meta de [meta]. ¿Es este el indicador que afecta tu propuesta?". Si el colaborador menciona un indicador que NO está en esa lista, acepta su dato igualmente, exigiendo el valor numérico actual y la meta que él indique. Estos valores orientan el diálogo pero NO alimentan los gráficos: los gráficos usan solo los valores confirmados por el colaborador en Fase 3. NO avances a Fase 3 sin brecha e impacto numéricos.
 Al reunir los 5 elementos, redacta el párrafo (orden: frecuencia + qué ocurre + dónde + brecha numérica + impacto) y muéstralo: "¿Este párrafo refleja correctamente la situación? ¿Deseas ajustar algo?". No avances sin confirmación explícita.
 
 === FASE 3 — ESTADO ACTUAL Y FUTURO (4 pasos secuenciales, sin saltos) ===
@@ -926,8 +937,13 @@ async function init() {
     ? `Los datos del colaborador ya están registrados en el sistema: Nombre: ${proposalData.COLABORADOR}, Área: ${proposalData.AREA}, Email colaborador: ${proposalData.EMAIL_COLABORADOR}, Email supervisor: ${proposalData.EMAIL_SUPERVISOR}. NO debes preguntar estos datos. Solo pide el proceso afectado después del menú.`
     : '';
 
+  const indicadores = await getIndicadores();
+  const datosIndicadores = (indicadores && indicadores.length > 0)
+    ? `Indicadores y objetivos reales disponibles en el sistema (úsalos en Fase 2 para orientar al colaborador con datos reales cuando el problema descrito se relacione con alguno): ${indicadores.map(i => `${i.nombre} [${i.tipo}]: valor actual ${i.valor_actual}, meta ${i.valor_meta}`).join(' | ')}.`
+    : '';
+
   try {
-    const reply = await callAPI(`Inicia la conversación presentándote brevemente como KaizenBot. La fecha de hoy es ${fechaHoy} — úsala automáticamente para los registros sin preguntársela al colaborador. ${datosColab} Presenta el menú de inicio con las 3 opciones.`);
+    const reply = await callAPI(`Inicia la conversación presentándote brevemente como KaizenBot. La fecha de hoy es ${fechaHoy} — úsala automáticamente para los registros sin preguntársela al colaborador. ${datosColab} ${datosIndicadores} Presenta el menú de inicio con las 3 opciones.`);
     hideTyping();
     addMessage('bot', reply);
     updateBadge(reply);
