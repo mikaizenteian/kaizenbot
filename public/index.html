@@ -269,6 +269,7 @@ async function checkEmployee() {
 }
 
 function confirmEmployee() {
+  currentProposalId = null;
   document.getElementById('employee-screen').classList.remove('active');
   init();
 }
@@ -414,7 +415,7 @@ REGLAS:
 - Si menciona una solución: "Gracias, eso es muy valioso y lo usaremos en la Fase 5. Por ahora centrémonos en describir qué está ocurriendo." Guárdala internamente para recuperarla en Fase 5.
 - RECURRENCIA: si el problema no parece recurrente, indaga y valida. Un problema excepcional no aplica esta metodología: infórmalo amablemente y no continúes el flujo.
 - IMPACTO CON DATOS (bloqueante): NO aceptes impactos vagos ("afecta la experiencia del cliente"). El primer mensaje del sistema incluye la lista real de indicadores y objetivos disponibles (nombre, tipo, valor actual, meta). ORDEN OBLIGATORIO: (1) PRIMERO, ANTES de pedir cualquier número al colaborador, revisa esa lista completa y verifica si el área, proceso o problema descrito coincide con alguno de esos indicadores (aunque sea una coincidencia parcial de tema, ej. "siniestros de salud" coincide con "% de errores en siniestros personas salud"). (2) Si hay coincidencia, tu respuesta DEBE mostrar ese indicador con sus valores reales en el mismo mensaje, no una pregunta genérica: "Según nuestros registros, [indicador] está en [valor actual] contra una meta de [meta]. ¿Es este el indicador que afecta tu propuesta?". (3) SOLO si no hay ninguna coincidencia en la lista, pide el valor numérico directamente: "¿Qué porcentaje o cantidad de [síntoma] se genera?". NUNCA saltes el paso 1 e invoques el paso 3 directamente cuando exista coincidencia disponible. Si el colaborador menciona un indicador que NO está en la lista, acepta su dato igualmente, exigiendo el valor numérico actual y la meta que él indique. Estos valores orientan el diálogo pero NO alimentan los gráficos: los gráficos usan solo los valores confirmados por el colaborador en Fase 3. NO avances a Fase 3 sin brecha e impacto numéricos.
-Al reunir los 5 elementos, redacta el párrafo (orden: frecuencia + qué ocurre + dónde + brecha numérica + impacto) y muéstralo: "¿Este párrafo refleja correctamente la situación? ¿Deseas ajustar algo?". No avances sin confirmación explícita.
+Al reunir los 5 elementos, redacta el párrafo (orden: frecuencia + qué ocurre + dónde + brecha numérica + impacto) y muéstralo. La brecha numérica debe incluir SIEMPRE tres datos explícitos en el texto: el valor actual, el valor estándar/meta, y la diferencia calculada entre ambos en palabras (ej: "... con una tasa de 14% contra una meta de 2%, una brecha de 12 puntos porcentuales..."). NUNCA menciones solo el valor actual y la meta dejando la diferencia implícita o por inferir — calcúlala tú mismo y escríbela explícitamente como parte del párrafo. Luego pregunta: "¿Este párrafo refleja correctamente la situación? ¿Deseas ajustar algo?". No avances sin confirmación explícita.
 
 === FASE 3 — ESTADO ACTUAL Y FUTURO (4 pasos secuenciales, sin saltos) ===
 PASO 3.1 — Pide: "Describe brevemente cómo ocurre el problema actualmente (máximo 250 caracteres orientativos)." Si guardaste un "cómo" en Fase 2, propónlo como borrador para que el colaborador lo valide o ajuste.
@@ -615,8 +616,8 @@ async function callAPI(text) {
     // Interceptar respuesta a la Opción 3 — consultar estado de propuesta
     const idMatch = text.trim().match(/KT-\d{4}-\d{3,4}/i);
     const resultado = idMatch
-      ? await getProposals({ id_propuesta: idMatch[0].toUpperCase() })
-      : await getProposals({ colaborador: text.trim() });
+      ? await getProposals({ id_propuesta: idMatch[0].toUpperCase(), colaborador_autorizado: proposalData.COLABORADOR })
+      : await getProposals({ colaborador: text.trim(), colaborador_autorizado: proposalData.COLABORADOR });
 
     let contexto;
     if (resultado === null) {
@@ -920,7 +921,7 @@ function closeDocModal() { document.getElementById('doc-modal').classList.remove
 function printProposal() {
   const content = document.getElementById('doc-content').innerHTML;
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Propuesta KaizenTeian</title>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Propuesta ${proposalData.ID || 'KaizenTeian'} - ${proposalData.COLABORADOR || ''}</title>
   <style>
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:20px;background:#fff;}
     .kz-wrap{max-width:700px;margin:0 auto;}
@@ -999,20 +1000,29 @@ function newProposal() {
 
 async function init(skipMenu = false) {
   if (!skipMenu) {
+    const emailIdentificado = proposalData.EMAIL_COLABORADOR;
     const draft = localStorage.getItem('kaizenbot_draft');
     if (draft) {
       try {
         const d = JSON.parse(draft);
-        if (confirm(`Tienes un borrador guardado el ${d.timestamp}. ¿Deseas retomarlo?`)) {
-          history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalReady || false;
-          currentProposalId = d.currentProposalId || null;
-          if (proposalReady) btnDownload.disabled = false;
-          btnSave.disabled = false;
-          for (const msg of history) addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
-          addMessage('bot', '✅ Borrador retomado. Continuemos desde donde lo dejaste.');
-          sendBtn.disabled = false;
-          return;
-        } else { localStorage.removeItem('kaizenbot_draft'); }
+        const draftEsDelMismoColaborador = emailIdentificado &&
+          d.proposalData && d.proposalData.EMAIL_COLABORADOR === emailIdentificado;
+        if (draftEsDelMismoColaborador) {
+          if (confirm(`Tienes un borrador guardado el ${d.timestamp}. ¿Deseas retomarlo?`)) {
+            history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalReady || false;
+            currentProposalId = d.currentProposalId || null;
+            if (proposalReady) btnDownload.disabled = false;
+            btnSave.disabled = false;
+            for (const msg of history) addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
+            addMessage('bot', '✅ Borrador retomado. Continuemos desde donde lo dejaste.');
+            sendBtn.disabled = false;
+            return;
+          } else {
+            localStorage.removeItem('kaizenbot_draft');
+          }
+        }
+        // Si el borrador guardado pertenece a otro colaborador, se ignora silenciosamente
+        // (no se borra, por si su verdadero dueño se identifica más adelante).
       } catch(e) { localStorage.removeItem('kaizenbot_draft'); }
     }
   }
