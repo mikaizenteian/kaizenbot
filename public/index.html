@@ -370,7 +370,7 @@ const SYSTEM_PROMPT = `Eres KaizenBot, el asistente digital de mejora continua d
 - El primer mensaje de la conversación incluye los datos REALES del colaborador (nombre, área, email del colaborador, email del supervisor) obtenidos automáticamente por el sistema, y la fecha del día.
 - USA SIEMPRE esos valores reales, textualmente. PROHIBIDO escribir marcadores o corchetes como "[nombre del sistema]" o "[área]": si el dato real está en el contexto, escríbelo tal cual; si no está, no inventes nada y dilo abiertamente.
 - NUNCA preguntes nombre, área, correos ni fecha. El único dato administrativo que preguntas es el proceso afectado.
-- ID de propuesta: se genera automáticamente con formato KT-AÑO-XXXX.
+- ID de propuesta: lo genera el sistema (JavaScript), NO tú. El sistema te lo entregará como dato fijo en el contexto exactamente en el momento en que el colaborador confirme sus datos de Fase 1. Nunca inventes, calcules ni repitas un ID por tu cuenta.
 
 === MENÚ DE INICIO ===
 Al iniciar, presenta siempre primero:
@@ -391,7 +391,7 @@ Al recibirlo, confirma de forma OBLIGATORIA Y BLOQUEANTE — incluso si el colab
 • Proceso: {el proceso que acaba de indicar}
 • Fecha: {la fecha real del sistema}
 ¿Todo correcto?"
-Solo tras el "sí" explícito, genera el ID: "¡Listo! Tu propuesta ha sido registrada con el número [ID]. Te recomiendo anotarlo. Ahora continuemos con la descripción del problema."
+Tras el "sí" explícito, el sistema te entregará el ID real ya generado — anúncialo exactamente como el sistema te lo indique: "¡Listo! Tu propuesta ha sido registrada con el número [ID entregado por el sistema]. Te recomiendo anotarlo. Ahora continuemos con la descripción del problema." Este mensaje se anuncia UNA SOLA VEZ; no lo repitas en ningún momento posterior de la conversación.
 
 === FASE 2 — DEFINICIÓN DEL PROBLEMA ===
 El párrafo del problema debe reunir obligatoriamente 5 elementos:
@@ -590,6 +590,9 @@ async function callAPI(text) {
   const ultimoMensajeBot = [...history].reverse().find(m => m.role === 'assistant');
   const esperandoConsultaEstado = ultimoMensajeBot &&
     ultimoMensajeBot.content.includes('Para consultar el estado de tu propuesta');
+  const esperandoConfirmacionFase1 = ultimoMensajeBot &&
+    ultimoMensajeBot.content.includes('¿Todo correcto?') && !currentProposalId;
+  const esRespuestaAfirmativa = /^(s[íi]|correcto|s[íi]\s*,?\s*correcto|s[íi]\s*está\s*bien|ok|okay|est[áa]\s*bien)/i.test(text.trim());
 
   // Interceptar número de empleado en Fase 1
   if (history.length <= 4 && /^[A-Za-z0-9\-]+$/.test(text.trim()) && text.trim().length <= 15 && !proposalData.COLABORADOR) {
@@ -602,6 +605,12 @@ async function callAPI(text) {
     } else {
       history.push({ role: 'user', content: text });
     }
+  } else if (esperandoConfirmacionFase1 && esRespuestaAfirmativa) {
+    // El colaborador confirmó sus datos de Fase 1: el sistema genera el ID real ahora, una sola vez
+    currentProposalId = generateProposalId();
+    proposalData.ID = currentProposalId;
+    const contexto = `El colaborador confirmó sus datos ("${text.trim()}"). El sistema ya generó el ID real y definitivo de esta propuesta: ${currentProposalId}. Usa EXACTAMENTE este ID (no inventes ni calcules otro número) en tu mensaje de registro: "¡Listo! Tu propuesta ha sido registrada con el número ${currentProposalId}. Te recomiendo anotarlo." Luego continúa pidiendo la descripción del problema según las instrucciones normales de Fase 2. NO vuelvas a mencionar ni regenerar este ID más adelante en la conversación — ya quedó anunciado una sola vez aquí.`;
+    history.push({ role: 'user', content: contexto });
   } else if (esperandoConsultaEstado) {
     // Interceptar respuesta a la Opción 3 — consultar estado de propuesta
     const idMatch = text.trim().match(/KT-\d{4}-\d{3,4}/i);
