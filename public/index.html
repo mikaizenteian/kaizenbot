@@ -976,7 +976,13 @@ function printProposal() {
 
 function newProposal() {
   if (history.length > 4 && !confirm('¿Iniciar nueva propuesta? Se perderá la conversación actual si no guardaste un borrador.')) return;
-  history = []; proposalData = {}; proposalReady = false; currentProposalId = null;
+  const datosColaboradorActual = {
+    COLABORADOR: proposalData.COLABORADOR,
+    AREA: proposalData.AREA,
+    EMAIL_COLABORADOR: proposalData.EMAIL_COLABORADOR,
+    EMAIL_SUPERVISOR: proposalData.EMAIL_SUPERVISOR
+  };
+  history = []; proposalData = { ...datosColaboradorActual }; proposalReady = false; currentProposalId = null;
   btnDownload.disabled = true; btnSave.disabled = true;
   messagesDiv.innerHTML = ''; phaseBadge.textContent = 'Iniciando...';
   init(true);
