@@ -287,6 +287,30 @@ function getCurrentDate() {
   return new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+function getCurrentDateDB() {
+  const hoy = new Date();
+  const dia = String(hoy.getDate()).padStart(2, '0');
+  const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+  const anio = hoy.getFullYear();
+  return `${dia}-${mes}-${anio}`;
+}
+
+function convertirFechaLargaADDMMYYYY(fechaLarga) {
+  if (!fechaLarga) return null;
+  const meses = {
+    enero: '01', febrero: '02', marzo: '03', abril: '04', mayo: '05', junio: '06',
+    julio: '07', agosto: '08', septiembre: '09', setiembre: '09', octubre: '10',
+    noviembre: '11', diciembre: '12'
+  };
+  const match = fechaLarga.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4})/i);
+  if (!match) return null;
+  const dia = match[1].padStart(2, '0');
+  const mes = meses[match[2].toLowerCase()];
+  const anio = match[3];
+  if (!mes) return null;
+  return `${dia}-${mes}-${anio}`;
+}
+
 async function getCollaborator(numeroEmpleado) {
   try {
     const response = await fetch('/api/get-collaborator', {
@@ -308,6 +332,21 @@ async function getIndicadores() {
     if (!response.ok) return null;
     const data = await response.json();
     return data.indicadores || [];
+  } catch (e) {
+    return null;
+  }
+}
+
+async function getProposals(params) {
+  try {
+    const response = await fetch('/api/get-proposals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params)
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.propuestas || [];
   } catch (e) {
     return null;
   }
@@ -341,7 +380,7 @@ Al iniciar, presenta siempre primero:
 2️⃣ Retomar una propuesta en borrador
 3️⃣ Consultar el estado de una propuesta"
 - Opción 2: pregunta si tiene número KT-AÑO-XXXX. Si no lo tiene: busca por nombre (máximo 5 resultados con estado Borrador o En Proceso, máximo 2 intentos). Si no aparece: indica que puede tener otro estado y ofrece la opción 3.
-- Opción 3: pide nombre o número de propuesta y muestra su estado.
+- Opción 3: pregunta ÚNICAMENTE (texto exacto, sin variarlo): "Para consultar el estado de tu propuesta, indícame tu número de propuesta (formato KT-AÑO-XXXX) o tu nombre completo."
 
 === FASE 1 — DATOS ADMINISTRATIVOS ===
 Si elige 1️⃣, pregunta ÚNICAMENTE: "¿Cuál es el proceso específico que se ve afectado por el problema que deseas mejorar?"
@@ -361,6 +400,13 @@ El párrafo del problema debe reunir obligatoriamente 5 elementos:
 3. DÓNDE — proceso, departamento o etapa específica.
 4. BRECHA NUMÉRICA (obligatoria) — valor actual vs estándar/meta con diferencia explícita.
 5. IMPACTO — indicador u objetivo afectado, con datos numéricos.
+
+VALIDACIÓN DE LOS 5 ELEMENTOS (obligatoria antes de preguntar cualquier cosa adicional):
+Antes de pedir un nuevo dato, revisa uno por uno los 5 elementos contra TODO lo que el colaborador ya escribió en la conversación (aunque lo haya dado de forma implícita o mezclado con otro elemento). Marca cada uno como CUBIERTO o FALTANTE.
+- Si un elemento está CUBIERTO (aunque sea de forma parcial pero suficiente para redactarlo), NO preguntes por él ni pidas más detalle del que la metodología exige.
+- Solo pregunta por elementos marcados como FALTANTE, y pregunta ÚNICAMENTE por ese elemento — nunca por datos adicionales que no son parte de los 5 (ejemplo de error a evitar: preguntar "¿cuántas pólizas?" cuando ese dato no es necesario para ninguno de los 5 elementos).
+- Si tienes duda sobre si preguntar algo que no está en la lista de 5 elementos, la regla por defecto es NO preguntarlo.
+- Excepción: la brecha numérica (elemento 4) y el impacto con datos (elemento 5) sí exigen el valor numérico específico aunque el colaborador ya haya mencionado el tema en términos generales — en ese caso no es una pregunta nueva, es pedir precisión sobre un elemento ya identificado como FALTANTE de dato numérico.
 
 REGLAS:
 - Redacción en tercera persona impersonal. El párrafo NUNCA nombra al colaborador. Sin palabras basura, sin causas, sin soluciones.
@@ -541,6 +587,10 @@ function updateBadge(reply) {
 }
 
 async function callAPI(text) {
+  const ultimoMensajeBot = [...history].reverse().find(m => m.role === 'assistant');
+  const esperandoConsultaEstado = ultimoMensajeBot &&
+    ultimoMensajeBot.content.includes('Para consultar el estado de tu propuesta');
+
   // Interceptar número de empleado en Fase 1
   if (history.length <= 4 && /^[A-Za-z0-9\-]+$/.test(text.trim()) && text.trim().length <= 15 && !proposalData.COLABORADOR) {
     const colab = await getCollaborator(text.trim().toUpperCase());
@@ -552,6 +602,26 @@ async function callAPI(text) {
     } else {
       history.push({ role: 'user', content: text });
     }
+  } else if (esperandoConsultaEstado) {
+    // Interceptar respuesta a la Opción 3 — consultar estado de propuesta
+    const idMatch = text.trim().match(/KT-\d{4}-\d{3,4}/i);
+    const resultado = idMatch
+      ? await getProposals({ id_propuesta: idMatch[0].toUpperCase() })
+      : await getProposals({ colaborador: text.trim() });
+
+    let contexto;
+    if (resultado === null) {
+      contexto = `El sistema no pudo conectarse a la base de datos para buscar la propuesta. Informa al colaborador que no fue posible consultar el estado en este momento y ofrece intentarlo de nuevo.`;
+    } else if (resultado.length === 0) {
+      contexto = `El sistema buscó "${text.trim()}" en las propuestas y no encontró resultados. Informa esto al colaborador y pídele que verifique el número o nombre (máximo 2 intentos); si no aparece tras el segundo intento, sugiere que contacte a su supervisor.`;
+    } else if (resultado.length === 1) {
+      const p = resultado[0];
+      contexto = `El sistema encontró la propuesta ${p.id_propuesta} de ${p.colaborador} (área: ${p.area}, proceso: ${p.proceso}, fecha: ${p.fecha}). Su estado actual es: "${p.estado}". Comunica este estado al colaborador de forma clara y natural.`;
+    } else {
+      const lista = resultado.map(p => `${p.id_propuesta} — ${p.colaborador} (${p.estado})`).join(' | ');
+      contexto = `El sistema encontró ${resultado.length} propuestas que coinciden con "${text.trim()}": ${lista}. Pide al colaborador que indique el número exacto (KT-AÑO-XXXX) de la que quiere consultar.`;
+    }
+    history.push({ role: 'user', content: contexto });
   } else {
     history.push({ role: 'user', content: text });
   }
@@ -616,7 +686,7 @@ async function saveProposal() {
         colaborador: nombreColab || 'Sin nombre',
         area: proposalData.AREA || '',
         proceso: proposalData.PROCESO || '',
-        fecha: proposalData.FECHA || getCurrentDate(),
+        fecha: convertirFechaLargaADDMMYYYY(proposalData.FECHA) || getCurrentDateDB(),
         estado: proposalReady ? 'Enviada' : 'Borrador',
         indicador: proposalData.INDICADOR || '',
         desperdicios: proposalData.DESPERDICIOS || '',
@@ -909,25 +979,27 @@ function newProposal() {
   history = []; proposalData = {}; proposalReady = false; currentProposalId = null;
   btnDownload.disabled = true; btnSave.disabled = true;
   messagesDiv.innerHTML = ''; phaseBadge.textContent = 'Iniciando...';
-  init();
+  init(true);
 }
 
-async function init() {
-  const draft = localStorage.getItem('kaizenbot_draft');
-  if (draft) {
-    try {
-      const d = JSON.parse(draft);
-      if (confirm(`Tienes un borrador guardado el ${d.timestamp}. ¿Deseas retomarlo?`)) {
-        history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalReady || false;
-        currentProposalId = d.currentProposalId || null;
-        if (proposalReady) btnDownload.disabled = false;
-        btnSave.disabled = false;
-        for (const msg of history) addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
-        addMessage('bot', '✅ Borrador retomado. Continuemos desde donde lo dejaste.');
-        sendBtn.disabled = false;
-        return;
-      } else { localStorage.removeItem('kaizenbot_draft'); }
-    } catch(e) { localStorage.removeItem('kaizenbot_draft'); }
+async function init(skipMenu = false) {
+  if (!skipMenu) {
+    const draft = localStorage.getItem('kaizenbot_draft');
+    if (draft) {
+      try {
+        const d = JSON.parse(draft);
+        if (confirm(`Tienes un borrador guardado el ${d.timestamp}. ¿Deseas retomarlo?`)) {
+          history = d.history; proposalData = d.proposalData || {}; proposalReady = d.proposalReady || false;
+          currentProposalId = d.currentProposalId || null;
+          if (proposalReady) btnDownload.disabled = false;
+          btnSave.disabled = false;
+          for (const msg of history) addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
+          addMessage('bot', '✅ Borrador retomado. Continuemos desde donde lo dejaste.');
+          sendBtn.disabled = false;
+          return;
+        } else { localStorage.removeItem('kaizenbot_draft'); }
+      } catch(e) { localStorage.removeItem('kaizenbot_draft'); }
+    }
   }
 
   waiting = true;
@@ -942,16 +1014,25 @@ async function init() {
     ? `Indicadores y objetivos reales disponibles en el sistema (úsalos en Fase 2 para orientar al colaborador con datos reales cuando el problema descrito se relacione con alguno): ${indicadores.map(i => `${i.nombre} [${i.tipo}]: valor actual ${i.valor_actual}, meta ${i.valor_meta}`).join(' | ')}.`
     : '';
 
+  const instruccionInicio = skipMenu
+    ? `El colaborador pulsó el botón "Nueva propuesta", lo cual equivale a elegir la opción 1️⃣ del menú de inicio directamente. NO muestres el menú de 3 opciones. Ve directo a la Fase 1: pregunta ÚNICAMENTE "¿Cuál es el proceso específico que se ve afectado por el problema que deseas mejorar?".`
+    : `Presenta el menú de inicio con las 3 opciones.`;
+
   try {
-    const reply = await callAPI(`Inicia la conversación presentándote brevemente como KaizenBot. La fecha de hoy es ${fechaHoy} — úsala automáticamente para los registros sin preguntársela al colaborador. ${datosColab} ${datosIndicadores} Presenta el menú de inicio con las 3 opciones.`);
+    const reply = await callAPI(`Inicia la conversación presentándote brevemente como KaizenBot. La fecha de hoy es ${fechaHoy} — úsala automáticamente para los registros sin preguntársela al colaborador. ${datosColab} ${datosIndicadores} ${instruccionInicio}`);
     hideTyping();
     addMessage('bot', reply);
     updateBadge(reply);
   } catch(err) {
     hideTyping();
     history = [];
-    addMessage('bot', `¡Bienvenido a KaizenBot! Soy tu asistente de mejora continua de ProKaizen Consulting.\n\n¿Qué deseas hacer hoy?\n\n1️⃣ Iniciar una nueva propuesta\n2️⃣ Retomar una propuesta en borrador\n3️⃣ Consultar el estado de una propuesta`);
-    phaseBadge.textContent = 'Menú inicio';
+    if (skipMenu) {
+      addMessage('bot', '¡Perfecto! Vamos a iniciar tu nueva propuesta.\n\n¿Cuál es el proceso específico que se ve afectado por el problema que deseas mejorar?');
+      phaseBadge.textContent = 'Fase 1: Datos';
+    } else {
+      addMessage('bot', `¡Bienvenido a KaizenBot! Soy tu asistente de mejora continua de ProKaizen Consulting.\n\n¿Qué deseas hacer hoy?\n\n1️⃣ Iniciar una nueva propuesta\n2️⃣ Retomar una propuesta en borrador\n3️⃣ Consultar el estado de una propuesta`);
+      phaseBadge.textContent = 'Menú inicio';
+    }
   }
   waiting = false;
   sendBtn.disabled = false;
