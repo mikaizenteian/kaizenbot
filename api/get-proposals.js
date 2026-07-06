@@ -9,9 +9,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Método no permitido' });
   }
-  const { id_propuesta, colaborador } = req.body;
+  const { id_propuesta, colaborador, colaborador_autorizado } = req.body;
   if (!id_propuesta && !colaborador) {
     return res.status(400).json({ error: 'Se requiere id_propuesta o colaborador' });
+  }
+  if (!colaborador_autorizado) {
+    return res.status(400).json({ error: 'Se requiere colaborador_autorizado' });
   }
 
   try {
@@ -20,6 +23,7 @@ export default async function handler(req, res) {
         .from('propuestas')
         .select('id_propuesta, colaborador, area, proceso, fecha, estado')
         .eq('id_propuesta', id_propuesta.trim().toUpperCase())
+        .eq('colaborador', colaborador_autorizado)
         .single();
 
       if (error || !data) {
@@ -30,7 +34,7 @@ export default async function handler(req, res) {
       const { data, error } = await supabase
         .from('propuestas')
         .select('id_propuesta, colaborador, area, proceso, fecha, estado')
-        .ilike('colaborador', `%${colaborador.trim()}%`)
+        .eq('colaborador', colaborador_autorizado)
         .limit(5);
 
       if (error) {
