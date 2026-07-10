@@ -1,2 +1,2 @@
 # kaizenbot
-KaizenBot - Asistente de mejora continua
+KaizenBot - Asistente de Mejora Continua
